@@ -1,0 +1,608 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Turno en la escuadradora</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Máquina en planta a la izquierda; a la derecha, el cuadro de mandos. Esmalte verde de máquina y los colores del cartel: rojo se elimina, verde referencia, amarillo topes. */
+:root{
+  color-scheme:dark;
+  --bg:#1C2B28; --panel:#26383A; --panel2:#30464A; --ink:#EEF3EC; --ink2:#AFC0B9; --line:#47605F;
+  --am:#F2C230; --ro:#EE6049; --ve:#63D192; --az:#8DB6FF;
+  --f-disp:"Barlow Condensed","Arial Narrow",sans-serif; --f-body:"Barlow","Segoe UI",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.42 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--am);outline-offset:1px}
+#app{height:100%;display:grid;grid-template-columns:205px minmax(0,1fr) 390px;grid-template-rows:auto minmax(0,1fr);grid-template-areas:"top top top" "lista maq panel";gap:10px}
+header{grid-area:top;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center}
+h1{margin:0;font:700 26px/1 var(--f-disp);letter-spacing:.01em}
+#etapas{display:flex;gap:3px;flex:1 1 auto;min-width:0;overflow-x:auto}
+#etapas span{padding:3px 9px;font:600 15px var(--f-disp);letter-spacing:.03em;color:var(--ink2);white-space:nowrap;border-bottom:2px solid var(--line)}
+#etapas span.ok{color:var(--ve);border-color:var(--ve)}
+#etapas span.on{color:var(--ink);border-color:var(--am)}
+.nota{display:flex;align-items:baseline;gap:7px;margin-left:auto}
+.nota small{font-size:13px;color:var(--ink2)}
+.nota b{font:600 25px/1 var(--f-num)}
+#maq{grid-area:maq;position:relative;border:1px solid var(--line);min-height:0;background:#172321;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+#cv{display:block;width:100%;height:100%}
+#avisos{position:absolute;left:12px;right:12px;top:12px;display:grid;gap:6px;pointer-events:none}
+#msg{padding:8px 12px;font-weight:500;background:#101A18;border:1px solid var(--line)}
+#porque{padding:8px 12px;font-size:15px;line-height:1.35;background:#101A18;border:1px solid var(--am)}
+#porque b{color:var(--am);font:600 15px var(--f-disp);letter-spacing:.04em;text-transform:uppercase;margin-right:6px}
+#msg.mal{border-color:var(--ro);color:#FFD4CB}
+#msg.bien{border-color:var(--ve);color:#CFF3DE}
+#lista{grid-area:lista;background:var(--panel);border:1px solid var(--line);overflow:auto;min-height:0;padding:10px 11px 12px}
+#lista h3{margin:0 0 2px;font:600 15px var(--f-disp);letter-spacing:.04em;text-transform:uppercase;display:flex;justify-content:space-between;gap:6px}
+#lista h3.ok{color:var(--ve)}
+#lista h3 small{font:500 12px var(--f-num);letter-spacing:0;color:var(--ink2);align-self:center;white-space:nowrap}
+#lista ul{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:1px}
+#lista li{display:grid;grid-template-columns:15px minmax(0,1fr) auto;gap:0 6px;padding:3px 0;font-size:14px;line-height:1.2;border-bottom:1px solid var(--line)}
+#lista li i{font:600 13px/1.2 var(--f-num);font-style:normal;color:var(--ve)}
+#lista li b{font:600 15px/1.2 var(--f-num)}
+#lista li.ok b{color:var(--ve)}
+#lista li small{grid-column:2/4;font:500 12px var(--f-num);color:var(--ink2)}
+#lista li.ok span,#lista li.ok small{color:var(--ve)}
+#lista li.ok span{text-decoration:line-through}
+#lista .mesa{display:grid;gap:5px;margin:4px 0 14px}
+.tz{display:grid;gap:4px;width:100%;text-align:left;border:1px solid var(--am);background:var(--panel2);padding:6px 7px;font-size:13px;font-weight:500}
+.tz:hover{background:#3A4F4C}
+.tz svg{display:block;max-width:100%}
+.solomov{display:none;gap:5px}
+#panel button:disabled,#panel input:disabled{opacity:.42;cursor:not-allowed}
+.cab2{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;margin-bottom:8px}
+.cab2 #mini{margin:0}.cab2 .ins{margin:0;font-size:14px}
+.fila2{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px}.fila2 .op{padding:5px 8px;font-size:14px}
+#panel .gir{gap:4px;margin-bottom:8px}#panel .gir button{padding:4px 8px;font-size:13.5px}
+#panel .seg{margin-bottom:6px}#panel .seg button{padding:4px 6px;font-size:13.5px}
+#panel .campo{margin-bottom:6px}
+#dedo{position:fixed;left:0;top:0;z-index:30;pointer-events:none;display:flex;align-items:flex-start;gap:3px;transition:transform .75s ease-in-out}
+#dedo svg{width:30px;height:30px;flex:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
+#dedo.toca svg{transform:scale(.72)}
+#dedo span{background:#F2C230;color:#1C2B28;font-weight:600;font-size:14px;padding:3px 8px;margin-top:20px;max-width:230px}
+@media (prefers-reduced-motion:reduce){#dedo{transition:none}}
+#demoVel{position:absolute;right:calc(214px + env(safe-area-inset-right,0px));bottom:12px;border:1px solid var(--am);background:#172321;color:var(--am);font-weight:600;padding:8px 12px}
+#app.demo #panel,#app.demo #lista,#app.demo #cv{pointer-events:none}
+#demoStop{position:absolute;right:calc(12px + env(safe-area-inset-right,0px));bottom:12px;border:0;background:var(--am);color:#1C2B28;font-weight:600;padding:8px 12px}
+#panel{grid-area:panel;background:var(--panel);border:1px solid var(--line);overflow:auto;min-height:0;padding:14px 15px 16px}
+#panel h2{margin:0 0 5px;font:600 27px/1.05 var(--f-disp);text-wrap:balance}
+.ins{margin:0 0 12px}
+.ayu{color:var(--ink2);font-size:13.5px;margin:8px 0 0}
+.lista{display:grid;gap:5px}
+.op{display:flex;gap:9px;align-items:center;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel2);padding:8px 10px}
+.op:hover{border-color:var(--ink2)}
+.op.si{border-color:var(--ve);background:#27503F}
+.op i{flex:none;width:17px;height:17px;border:1.5px solid var(--ink2);display:grid;place-items:center;font:600 12px var(--f-num);font-style:normal}
+.op.si i{background:var(--ve);border-color:var(--ve);color:#10201A}
+.op small{display:block;color:var(--ink2);font-size:13px}
+.pri{margin-top:12px;width:100%;border:0;background:var(--am);color:#1C2B28;font-weight:600;padding:9px 12px}
+.pri:disabled{opacity:.45;cursor:not-allowed}
+.sec{margin-top:8px;width:100%;border:1px solid var(--line);background:none;padding:7px 12px;font-size:14px}
+.hecho{list-style:none;margin:0 0 10px;padding:0;font-size:13.5px;color:var(--ve);display:grid;gap:2px}
+.cuadro{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:10px 12px;align-items:center;padding:11px;background:#3A4F4C;margin-bottom:12px}
+.seta{width:60px;height:60px;padding:0;border-radius:50%;border:5px solid #1C2B28;font:700 12px var(--f-disp);letter-spacing:.04em;color:#fff}
+.seta.mar{background:#1F9A5A}.seta.par{background:#D5301B}
+.seta.vivo{box-shadow:0 0 0 3px var(--ve)}
+.est{font:500 13px var(--f-num);line-height:1.5;margin:0 0 12px}
+.cm{background:#C9B98A;color:#1C2B28;padding:9px;margin-bottom:10px;border:3px solid #DDE1DC}
+.cm-sup{display:grid;grid-template-columns:122px minmax(0,1fr);gap:9px}
+.cm-led{display:grid;gap:5px;align-content:start}
+.led{background:#3A0B0B;color:#FF3B4E;font:600 21px/1.25 var(--f-num);text-align:right;padding:1px 6px;min-height:29px}
+.led.act{outline:2px solid #1B4DBF}
+.cinta{background:#0D0D0D;height:27px}
+.cm-tec{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}
+.k{border:1.5px solid #4A3F24;background:#E0D4AE;color:#1C2B28;padding:3px 0;font:600 14px var(--f-body);border-radius:3px}
+.k.fn:nth-of-type(1){grid-column:span 2}
+.k.fn.on{background:#1B4DBF;color:#fff}
+.k.st{background:#1F9A5A;color:#fff;grid-column:span 2}
+.k.sp{background:#D5301B;color:#fff}
+.cm-inf{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:0 4px}
+.emer{width:58px;height:58px;padding:0;border-radius:50%;border:6px solid #F2C230;background:#D5301B;color:#fff;font:700 12px var(--f-disp)}
+.bv,.br{width:50px;height:50px;padding:0;border-radius:50%;border:4px solid #DDE1DC;color:#fff;font:600 11px var(--f-body)}
+.bv{background:#15704A}.bv.vivo{background:#20C074;box-shadow:0 0 0 3px #1C2B28}
+.bv:disabled{opacity:.45;cursor:not-allowed}
+.br{background:#D5301B}
+.tg{display:grid;gap:5px;margin-bottom:12px}
+.campo{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.campo label{flex:1 1 100%;font-size:13.5px;color:var(--ink2)}
+.campo input[type=number],.campo input[type=text],.txt{width:84px;padding:5px 7px;background:#172321;border:1px solid var(--line);font:600 16px var(--f-num)}
+.txt{width:100%;font:500 16px var(--f-body);margin-bottom:8px}
+.campo button,.gir button{border:1px solid var(--line);background:var(--panel2);padding:5px 10px;font-size:14px}
+.gir{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.seg{display:flex;border:1px solid var(--line);margin-bottom:10px}
+.seg button{flex:1;border:0;background:none;padding:6px 8px;font-size:14px;font-weight:500;color:var(--ink2)}
+.seg button.on{background:var(--ink);color:var(--bg)}
+input[type=range]{width:100%;accent-color:var(--am)}
+#lado,#mini{display:block;width:100%;height:auto;background:#172321;border:1px solid var(--line);margin:0 0 10px}
+.res{font:600 16px var(--f-num)}
+table{border-collapse:collapse;width:100%;margin:6px 0 12px;font:500 13.5px var(--f-num)}
+td,th{border-bottom:1px solid var(--line);padding:4px 3px;text-align:left}
+td.n,th.n{text-align:right}
+.grp{font:600 15px var(--f-disp);letter-spacing:.04em;text-transform:uppercase;margin:10px 0 2px;color:var(--ink2)}
+.inc{font-size:14px;display:grid;gap:5px;margin:6px 0 12px;padding:0;list-style:none}
+.inc li{display:flex;justify-content:space-between;gap:10px}
+.inc b{font-family:var(--f-num);color:var(--ro);white-space:nowrap}
+.cert{display:block;width:100%;height:auto;border:1px solid var(--line);margin:8px 0}
+.cod{font:600 15px var(--f-num);word-break:break-all;background:#172321;padding:6px 8px;display:block}
+@media (max-width:860px){
+  html,body{height:auto}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+  #app{height:auto;display:flex;flex-direction:column}
+  #maq{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;height:52svh;flex:none}
+  .solomov{display:grid}
+  #panel{overflow:visible;order:2}
+  #lista{overflow:visible;order:3}
+  #maq{order:1}
+  .nota{margin-left:0}
+}
+</style>
+<div id="app">
+  <header><h1>Turno en la escuadradora</h1>
+    <div id="etapas"></div><div class="nota"><small>Nota PRL</small><b id="nota">10,00</b></div></header>
+  <aside id="lista" aria-label="Lista de piezas"></aside>
+  <main id="maq"><canvas id="cv" aria-label="Escuadradora vista en planta y plano de corte"></canvas><div id="avisos"><div id="msg" hidden></div><div id="porque" hidden></div></div><button id="demoStop" hidden>Detener la demostración</button><button id="demoVel" hidden>Ir más rápido</button></main>
+  <div id="dedo" hidden><svg viewBox="0 0 24 24"><path d="M4 2l16 11-7 1.5 4 7.5-3 1.6-4-7.6-5 5z" fill="#F2C230" stroke="#1C2B28" stroke-width="1.4"/></svg><span></span></div>
+  <aside id="panel" aria-live="polite"></aside>
+</div>
+<script>
+/* ---------- datos ---------- */
+const INC={
+ epi:['No utilizar el EPI obligatorio para la operación',.5,'g'],
+ resg:['Utilizar la máquina sin el resguardo colocado',.75,'g'],
+ limpio:['No dejar el puesto limpio y ordenado al finalizar',.75,'g'],
+ conectada:['Cambiar el disco con la máquina conectada',1,'mg'],
+ manos:['Manos junto al disco en marcha',.75,'g'],
+ retro:['Provocar un retroceso por mala preparación',.75,'g'],
+};
+const EPIS=[{id:'gafas',t:'Gafas de protección',ok:1},{id:'oido',t:'Protectores auditivos',ok:1},{id:'pie',t:'Calzado de seguridad',ok:1},{id:'ropa',t:'Sin ropa suelta, pulseras ni anillos, y el pelo recogido',ok:1},{id:'guantes',t:'Guantes',ok:0}];
+const DISCOS=[{id:'a',t:'24 dientes',s:'Madera maciza al hilo'},{id:'b',t:'60 dientes alternos',s:'Tronzar madera maciza'},{id:'c',t:'80 dientes',s:'Tableros'}];
+const CAMBIO=['Parar la máquina y esperar a que el disco se detenga','Desconectar la máquina','Abrir la protección y aflojar la tuerca','Cambiar el disco, con el sentido de giro correcto','Apretar bien la tuerca y quitar la llave','Ajustar el cuchillo divisor: alineado y a menos de 8 mm de los dientes','Girar el disco a mano y comprobar que no roza','Cerrar la protección'];
+/* Despiece inventado para el juego */
+const BOARDS_JUEGO=[
+ {g:19,mejor:1.229e6,mat:'DM 19',p:[['Costado',2,900,350],['Techo',1,760,350],['Suelo',1,760,350],['Balda',1,722,330]]},
+ {g:10,beta:true,mejor:2.395e6,mat:'Rechapado pino 10',p:[['Puerta',2,420,360],['Cartela',2,200,120]]},
+ {g:4,mejor:1.987e6,mat:'DM 4',p:[['Trasera',1,900,760]]},
+];
+/* Despiece solo para la demostración: otras medidas y gruesos, para que no enseñe la solución del juego */
+const BOARDS_DEMO=[
+ {g:25,mejor:0,mat:'DM 25',p:[['Lateral',2,1100,400],['Tapa',1,800,400],['Base',1,800,400],['Estante',1,756,380]]},
+ {g:12,beta:true,mejor:0,mat:'Rechapado pino 12',p:[['Frente',2,600,300],['Listón',2,280,100]]},
+ {g:6,mejor:0,mat:'DM 6',p:[['Trasera',1,1100,800]]},
+];
+let BOARDS=BOARDS_JUEGO;
+const W0=2440,H0=1220,M=10,K=3.2,KT='3,2',FIN=170;
+const r1=v=>Math.round(v*10)/10,n1=v=>String(r1(v)).replace('.',',');
+const SECRETO='IESVE-escuadradora-2026';
+const dlP=(window.claude&&claude.use)?claude.use('downloads'):Promise.resolve(null);
+
+/* ---------- estado ---------- */
+let G;
+function piezasDe(b){const o=[];BOARDS[b].p.forEach((p,i)=>{for(let k=0;k<p[1];k++)o.push({id:b+'-'+i+'-'+k,n:p[0],l:p[2],w:p[2],h:p[3],x:0,y:0,on:false})});return o}
+function nuevo(){return {fase:'inicio',nombre:'',bi:0,planes:BOARDS.map((_,i)=>piezasDe(i)),sel:null,cortes:[],hechas:new Set(),mesa:[],map:new Map(),trozo:null,op:null,nid:0,epi:new Set(),disco:null,cambio:0,orden:CAMBIO.map((_,i)=>i).sort(()=>Math.random()-.5),alt:60,puesto:null,
+  b:0,paso:0,sub:'montaje',on:false,rpm:0,prot:false,asp:false,vista:'maquina',tec:{eje:null,buf:''},guia:620,adel:false,tope:400,uso:'tope',feed:0,fy:-1000,pz:null,recorte:null,inc:[],vistos:new Set(),tableros:3,pausa:false,empu:false,yaPauso:false,cert:null,t0:Date.now(),prof:null}}
+function nota(){let n=10,g=0,mg=false;G.inc.forEach(k=>{const c=INC[k];n-=c[1];if(c[2]==='g')g++;if(c[2]==='mg')mg=true});if(mg||g>=3)n=0;return Math.max(0,n)}
+const coma=(v,d=2)=>v.toFixed(d).replace('.',',');
+function falta(k){const id=k+':'+(G.fase==='corte'?G.b+'.'+G.paso:G.fase);if(G.vistos.has(id))return;G.vistos.add(id);G.inc.push(k);$('#nota').textContent=coma(nota())}
+const $=s=>document.querySelector(s);
+let tMsg;
+function aviso(t,c=''){const m=$('#msg');m.textContent=t;m.className=c;m.hidden=false;clearTimeout(tMsg);tMsg=setTimeout(()=>m.hidden=true,7000)}
+
+/* ---------- plano de corte ---------- */
+function validar(b){
+  const P=G.planes[b];
+  if(P.some(p=>!p.on))return 'Faltan piezas por colocar en este tablero.';
+  if(BOARDS[b].beta){const g=P.find(p=>p.w!==p.l);if(g)return `${g.n} está girada. La primera medida del despiece, ${g.l}, es la longitud y tiene que ir en el sentido de la beta.`}
+  for(const p of P)if(p.x<M-.5||p.y<M-.5||p.x+p.w>W0-M+.5||p.y+p.h>H0-M+.5)return 'Una pieza se sale de la zona útil. Reserva 10 mm en todo el borde para sanear.';
+  for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++){const a=P[i],c=P[j];const sx=a.x+a.w+K-.5<=c.x||c.x+c.w+K-.5<=a.x,sy=a.y+a.h+K-.5<=c.y||c.y+c.h+K-.5<=a.y;if(!sx&&!sy)return `${a.n} y ${c.n} se pisan o no dejan los ${KT} mm que se come el disco.`}
+  const r=resuelve(P);
+  if(r.err==='suelta')return `Hay piezas separadas de su referencia. Júntalas contra la zona de saneado y deja ${KT} mm entre ellas.`;
+  if(r.err==='guillotina')return 'Esta distribución no se puede cortar: la escuadradora corta de lado a lado, sin pararse a mitad de tablero.';
+  const lib=restoMayor(P),best=BOARDS[b].mejor;
+  if(lib<best*.9)return `Se puede cortar, pero el mayor resto entero es de ${coma(lib/1e6)} m² y se puede dejar uno de unos ${coma(best/1e6)} m². Coloca las piezas de otra forma para que sobre un tablero grande.`;
+  G.cortes[b]=r.cuts;return null}
+function restoMayor(P){const on=P.filter(p=>p.on),U=[...new Set([M,W0-M,...on.flatMap(p=>[p.x-K,p.x+p.w+K])])].filter(v=>v>=M&&v<=W0-M).sort((a,b)=>a-b),V=[...new Set([M,H0-M,...on.flatMap(p=>[p.y-K,p.y+p.h+K])])].filter(v=>v>=M&&v<=H0-M).sort((a,b)=>a-b);let m=0;
+  U.forEach((a,i)=>U.slice(i+1).forEach(c=>V.forEach((b,j)=>V.slice(j+1).forEach(d=>{const A=(c-a)*(d-b);if(A>m&&on.every(p=>a>=p.x+p.w||c<=p.x||b>=p.y+p.h||d<=p.y))m=A}))));return m}
+const tam=(p,a)=>a==='x'?p.w:p.h;
+function resuelve(P){const cuts=[];const err=rec({x0:M,y0:M,x1:W0,y1:H0},P,cuts);return err?{err}:{cuts}}
+function rec(R,P,cuts){
+  if(!P.length)return null;
+  if(Math.min(...P.map(p=>p.x))>R.x0+.5||Math.min(...P.map(p=>p.y))>R.y0+.5)return 'suelta';
+  const hx=Math.max(...P.map(p=>p.x+p.w));
+  if(R.x1-hx>.5&&R.x1-hx>hx-R.x0){cuts.push({R:{...R},a:'x',c:hx,m:r1(hx-R.x0)});return rec({...R,x1:hx},P,cuts)}
+  for(const a of ['y','x']){
+    const vals=[...new Set(P.map(p=>p[a]+tam(p,a)))].sort((u,v)=>u-v);
+    for(const c of vals){
+      const A=P.filter(p=>p[a]+tam(p,a)<=c+.5),B=P.filter(p=>p[a]>=c+K-.5);
+      if(A.length&&B.length&&A.length+B.length===P.length&&Math.min(...B.map(p=>p[a]))<=c+K+.5){
+        cuts.push({R:{...R},a,c,m:r1(c-R[a+'0'])});
+        const e=rec({...R,[a+'1']:c},A,cuts);if(e)return e;
+        return rec({...R,[a+'0']:r1(c+K)},B,cuts);
+      }
+    }
+    const hi=Math.max(...P.map(p=>p[a]+tam(p,a)));
+    if(R[a+'1']-hi>.5){cuts.push({R:{...R},a,c:hi,m:r1(hi-R[a+'0'])});return rec({...R,[a+'1']:hi},P,cuts)}
+  }
+  return P.length===1?null:'guillotina';
+}
+function colocaLibre(p,P){const prueba=[[M,M]];P.filter(o=>o.on&&o!==p).forEach(o=>{prueba.push([o.x+o.w+K,o.y],[o.x,o.y+o.h+K],[M,o.y+o.h+K],[o.x+o.w+K,M])});
+  const libre=(x,y)=>x+p.w<=W0-M&&y+p.h<=H0-M&&P.every(o=>o===p||!o.on||x+p.w+K<=o.x||o.x+o.w+K<=x||y+p.h+K<=o.y||o.y+o.h+K<=y);
+  for(const[x,y]of prueba)if(libre(x,y)){p.x=r1(x);p.y=r1(y);p.on=true;return}
+  p.x=Math.round((W0-p.w)/2);p.y=Math.round((H0-p.h)/2);p.on=true}
+function iman(p,x,y,P){const xs=[M,W0-M-p.w],ys=[M,H0-M-p.h];P.filter(o=>o.on&&o!==p).forEach(o=>{xs.push(o.x+o.w+K,o.x-p.w-K,o.x,o.x+o.w-p.w);ys.push(o.y+o.h+K,o.y-p.h-K,o.y,o.y+o.h-p.h)});
+  const cer=(v,L)=>{let m=v,d=70;L.forEach(c=>{if(Math.abs(c-v)<d){d=Math.abs(c-v);m=c}});return m};
+  return [r1(Math.min(Math.max(cer(x,xs),0),W0-p.w)),r1(Math.min(Math.max(cer(y,ys),0),H0-p.h))]}
+
+/* ---------- secuencia de cortes ---------- */
+const clave=R=>[R.x0,R.y0,R.x1,R.y1].join();
+const paso=()=>G.op;
+function opDe(t){const Q=t.R,c=G.map.get(clave(Q)),Sk=(Q.y0>M||t.canto)?'n':'b',Wk=(Q.x0>M||t.cabeza)?'n':'b',Nk=Q.y1<H0?'n':'b',Ek=Q.x1<W0?'n':'b',dx=Wk==='b'?M:0,dy=Sk==='b'?M:0;
+  if(c.a==='x'&&Wk==='b')return {t:'testa',R:Q,w:r1(Q.x1),h:r1(Q.y1-Q.y0+dy),e0:{L:'b',R:Ek,B:Sk,T:Nk}};
+  if(c.a==='y'&&Sk==='b')return {t:'sanear',R:Q,w:r1(Q.y1),h:r1(Q.x1-Q.x0+dx),e0:{L:'b',R:Nk,B:Wk,T:Ek}};
+  const Rw=r1(Q.x1-Q.x0+dx),Rh=r1(Q.y1-Q.y0+dy),w=c.a==='x'?Rw:Rh,h=c.a==='x'?Rh:Rw,resto=h<=w&&w-c.m-K>c.m+100;
+  const e0=c.a==='x'?{L:'c',R:Ek,B:Sk,T:Nk}:{L:'c',R:Nk,B:Wk,T:Ek};
+  return {t:'corte',...c,w,h,resto,e0,met:h>w?(h<=400?'retr':'adel'):resto?'retr':'tope'}}
+function colocar(sig){const s=paso(),prev=G.pz;G.feed=0;G.sub='montaje';G.recorte=null;G.yaPauso=false;G.pausa=false;G.empu=false;
+  if(sig){G.pz={w:s.w,h:s.h,x:0,e:{L:s.e0.R,R:s.e0.L,B:prev.e.B,T:prev.e.T},beta:(s.a==='y'||s.t==='sanear')?'v':'h'};posicion()}
+  else{const e={...s.e0};if(s.t==='corte'&&Math.random()<.5)[e.L,e.R]=[e.R,e.L];if(Math.random()<.5)[e.B,e.T]=[e.T,e.B];G.pz={w:s.w,h:s.h,x:0,e,beta:(s.a==='y'||s.t==='sanear')?'v':'h'};if(s.w>s.h)girar(1);else posicion()}
+  G.fy=-220-G.pz.h}
+function posicion(){const s=paso(),p=G.pz;if(s.t==='corte')situar();else p.x=-p.w-150;G.fy=-220-p.h}
+function situar(){const s=paso(),p=G.pz;if(s.t!=='corte')return;p.x=G.uso==='tope'?-G.tope:G.guia-p.w}
+function girar(d){if(G.sub!=='montaje')return;const p=G.pz,e=p.e;[p.w,p.h]=[p.h,p.w];p.beta=p.beta==='h'?'v':'h';p.e=d>0?{R:e.T,B:e.R,L:e.B,T:e.L}:{R:e.B,T:e.R,L:e.T,B:e.L};posicion()}
+function voltear(){if(G.sub!=='montaje')return;const p=G.pz,e=p.e;p.e={...e,L:e.R,R:e.L};posicion()}
+function empiezaTablero(b){G.b=b;G.paso=0;G.mesa=[];G.map=new Map((G.cortes[b]||[]).map(c=>[clave(c.R),c]));G.trozo={id:++G.nid,R:{x0:M,y0:M,x1:W0,y1:H0},cabeza:false,canto:false};G.op=opDe(G.trozo);G.prot=false;G.fase='altura';pinta()}
+const sobra=()=>G.pz.x+G.pz.w;
+const conRegla=()=>{const s=paso();return s.t!=='corte'||G.uso==='tope'||!G.adel};
+const carroMueve=()=>conRegla()||G.pz.x<-150;
+function revisar(){const s=paso();
+  if(s.t!=='corte'){const p=G.pz;if(p.w!==s.w)return 'El tablero está girado: el borde en bruto tiene que quedar hacia el disco.';if(p.e.T==='b'&&p.e.B!=='b')return 'Contra la regla tiene que ir un canto limpio, no el canto en bruto. Gira el tablero.';if(p.e.R!=='b')return 'El borde en bruto tiene que quedar hacia el disco. Voltea el tablero.'}
+  if(s.t!=='corte'){const o=sobra();if(o<4)return 'Tiene que sobresalir unos 10 mm de la línea del disco. Ahora el disco no limpia todo el canto.';if(o>30)return 'Sobresale demasiado. Bastan unos 10 mm para sanear.';return null}
+  if(s.met==='tope'&&G.uso!=='tope')return `Cortas ${n1(s.m)} de una pieza de ${n1(s.w)}: sobran ${n1(s.w-s.m-K)}, sin pasar de 100 por encima de lo que cortas. Este corte se hace con el carro y el tope abatible.`;
+  if(s.resto&&G.uso==='tope')return `Cortas ${n1(s.m)} de una pieza de ${n1(s.w)}: sobran ${n1(s.w-s.m-K)}, más de 100 por encima de lo que cortas. Usa la guía paralela retrasada como tope y empuja el carro.`;
+  if(s.met!=='tope'&&G.uso==='tope')return 'Este corte sigue la pieza a lo largo: es un corte a ancho y se hace con la guía paralela.';
+  const p=G.pz;
+  if(p.w!==s.w)return 'El tablero está girado: la línea de corte no coincide con tu plano.';
+  if(G.uso==='tope'&&p.e.L!=='c')return 'El canto de referencia, el verde, tiene que ir contra el tope. Voltea el tablero.';
+  if(G.uso==='guia'&&p.e.R!=='c')return 'El canto de referencia, el verde, tiene que ir contra la guía. Voltea el tablero.';
+  if(s.met!=='adel'&&p.e.T==='b'&&p.e.B!=='b')return 'Contra la regla tiene que ir un canto limpio, no el canto en bruto. Gira el tablero.';
+  return null}
+function empezarAvance(wx){
+  if(G.fase!=='corte'||G.pausa||G.sub==='hecho')return false;
+  if(!G.on){aviso('La máquina está parada. Pulsa MARCHA.');return false}
+  if(G.rpm<.9){aviso('Espera a que el disco coja todas sus vueltas.');return false}
+  if(!G.prot){falta('resg');aviso('El protector tiene que estar bajado hasta casi tocar la pieza. Se descuenta y no se corta.','mal');pinta();return false}
+  if(!G.asp){aviso('Conecta la aspiración antes de cortar.');return false}
+  if(Math.abs(wx)<70){falta('manos');aviso('Esa mano está en la línea del disco. Agarra lejos de ella.','mal');pinta();return false}
+  if(G.sub==='montaje'){const r=revisar();if(r){aviso(r,'mal');return false}G.sub='avance'}
+  return true}
+function terminarCorte(){const s=paso(),p=G.pz;
+  if(s.t!=='corte'){G.recorte={x:0,w:sobra(),h:p.h,res:true};p.w=-p.x;p.e.R='c'}
+  else if(G.uso==='tope'){G.recorte={x:0,w:sobra(),h:p.h};p.w=G.tope}
+  else{G.recorte={x:p.x,w:-p.x,h:p.h};p.w=G.guia;p.x=0}
+  G.sub='hecho';aviso('Corte terminado. Retira la pieza por tu lado, sin pasar el brazo por encima del disco.','bien');pinta()}
+function retroceso(txt){falta('retro');G.sub='montaje';G.feed=0;aviso(txt,'mal');pinta()}
+function reparte(Q,t){if(G.map.has(clave(Q))){G.mesa.push({id:++G.nid,R:Q,cabeza:t.cabeza,canto:t.canto});return}const d=G.planes[G.b].filter(p=>p.x>=Q.x0-.5&&p.y>=Q.y0-.5&&p.x+p.w<=Q.x1+.5&&p.y+p.h<=Q.y1+.5);if(d.length===1)G.hechas.add(d[0].id)}
+function retirar(){const s=paso(),t=G.trozo;
+  if(s.t==='corte'){const v=G.uso==='tope'?G.tope:G.guia;if(Math.abs(v-s.m)>.5){G.tableros++;G.planes[G.b].forEach(p=>G.hechas.delete(p.id));const b=G.b;empiezaTablero(b);G.fase='corte';colocar();aviso(`Has cortado a ${v} y tu plano decía ${n1(s.m)}. Se pierde el tablero: empiezas este otra vez con uno nuevo.`,'mal');pinta();return}}
+  G.recorte=null;$('#msg').hidden=true;G.paso++;
+  if(s.t!=='corte'){if(s.t==='testa')t.cabeza=true;else t.canto=true;G.op=opDe(t);colocar(true);pinta();return}
+  {const Q=s.R;reparte({...Q,[s.a+'1']:s.c},t);reparte({...Q,[s.a+'0']:r1(s.c+K)},t)}
+  G.trozo=null;G.op=null;G.pz=null;G.sub='elegir';
+  if(G.mesa.length){pinta();return}
+  if(G.b<BOARDS.length-1)empiezaTablero(G.b+1);else{G.fase='limpieza';pinta()}
+}
+const esTira=o=>o.t==='corte'&&o.a==='y'&&o.met==='adel'&&o.h>=W0-M-1;
+function coge(id){const t=G.mesa.find(m=>m.id===id);if(!t||G.sub!=='elegir')return;const o=opDe(t);
+  if(!esTira(o)&&G.mesa.some(m=>m!==t&&esTira(opDe(m)))){aviso('Primero saca todas las tiras del tablero. Cuando las tengas, córtalas a largo.','mal');return}
+  G.mesa=G.mesa.filter(m=>m!==t);G.trozo=t;G.op=o;colocar();pinta()}
+function aMesa(){if(G.sub!=='montaje'||!G.trozo)return;G.mesa.push(G.trozo);G.trozo=null;G.op=null;G.pz=null;G.sub='elegir';pinta()}
+function nombreT(Q){const w=Q.x1-Q.x0,h=Q.y1-Q.y0;return w>=W0-M-1&&h>=H0*.6?'Tablero':Math.max(w,h)>=W0*.5?'Tira':'Trozo'}
+function mesaHtml(){return G.mesa.map(t=>{const Q=t.R,w=Q.x1-Q.x0,h=Q.y1-Q.y0,k=.072,d=G.planes[G.b].filter(p=>p.x>=Q.x0-.5&&p.y>=Q.y0-.5&&p.x+p.w<=Q.x1+.5&&p.y+p.h<=Q.y1+.5).map(p=>`<rect x="${p.x}" y="${H0-p.y-p.h}" width="${p.w}" height="${p.h}" fill="#BC986C" stroke="#5E4426" stroke-width="10"/>`).join('');return `<button class="tz" data-a="coge" data-v="${t.id}"><span>${nombreT(Q)} ${n1(Math.max(w,h))} × ${n1(Math.min(w,h))}</span><svg viewBox="${Q.x0} ${H0-Q.y1} ${w} ${h}" style="width:${Math.max(w*k,6)}px;height:${Math.max(h*k,6)}px"><rect x="${Q.x0}" y="${H0-Q.y1}" width="${w}" height="${h}" fill="#EDE3D2"/>${d}</svg></button>`}).join('')}
+
+/* ---------- certificado ---------- */
+const normal=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').trim().toUpperCase().replace(/\s+/g,' ');
+async function sha(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('').slice(0,8).toUpperCase()}
+const firma=(nombre,datos)=>sha(SECRETO+'|'+normal(nombre)+'|'+datos);
+const areaP=b=>G.planes[b].reduce((a,p)=>a+p.w*p.h,0);
+const aprov=()=>BOARDS.reduce((a,_,b)=>a+areaP(b),0)/(G.tableros*W0*H0)*100;
+function pad(n){return String(n).padStart(2,'0')}
+async function emitir(){if(G.demo)return;const d=new Date(),f=`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}`;
+  const datos=`${Math.round(nota()*100)}-${Math.round(aprov()*10)}-${G.tableros}-${f}`;
+  const cod=datos+'-'+await firma(G.nombre,datos);
+  const mins=Math.max(1,Math.round((Date.now()-G.t0)/60000));
+  const cv2=lienzoCert(d,cod,mins);
+  G.cert={cod,img:cv2.toDataURL('image/jpeg',.9),fecha:`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}h`};pinta()}
+function lienzoCert(d,cod,mins){const C=document.createElement('canvas');C.width=1684;C.height=1190;const x=C.getContext('2d');
+  x.fillStyle='#fff';x.fillRect(0,0,1684,1190);x.fillStyle='#1C2B28';x.fillRect(0,0,1684,120);
+  const t=(s,a,b,f,col='#17201C',al='left')=>{x.fillStyle=col;x.font=f;x.textAlign=al;x.fillText(s,a,b)};
+  t('Turno en la escuadradora · juego completado',50,76,'700 46px "Barlow Condensed",Arial,sans-serif','#fff');
+  t('IES Virgen de la Esperanza · FCM',1634,74,'500 24px Barlow,Arial,sans-serif','#CFE0DA','right');
+  t(G.nombre,50,190,'600 46px Barlow,Arial,sans-serif');
+  t(`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} · ${pad(d.getHours())}:${pad(d.getMinutes())}h · ${mins} min de juego`,50,232,'500 24px Barlow,Arial,sans-serif','#55615B');
+  const dato=(a,et,val)=>{t(et,a,290,'500 22px Barlow,Arial,sans-serif','#55615B');t(val,a,340,'600 44px "IBM Plex Mono",monospace')};
+  dato(50,'Nota PRL',coma(nota()));dato(330,'Tableros usados',String(G.tableros));dato(640,'Aprovechamiento',coma(aprov(),1)+' %');
+  BOARDS.forEach((B,b)=>{const ox=50+b*535,oy=400,s=500/W0,h=H0*s;t('Plano · '+B.mat+' · '+coma(areaP(b)/(W0*H0)*100,1)+' %',ox,oy-10,'600 24px Barlow,Arial,sans-serif');x.fillStyle='#EDE3D2';x.fillRect(ox,oy,500,h);x.strokeStyle='#333';x.lineWidth=1.5;x.strokeRect(ox,oy,500,h);G.planes[b].forEach(p=>{const X0=ox+p.x*s,Y0=oy+h-(p.y+p.h)*s;x.fillStyle='#BC986C';x.fillRect(X0,Y0,p.w*s,p.h*s);x.strokeStyle='#5E4426';x.strokeRect(X0,Y0,p.w*s,p.h*s);x.fillStyle='#17201C';x.font='500 15px Barlow,Arial,sans-serif';x.textAlign='center';x.fillText(p.n,X0+p.w*s/2,Y0+p.h*s/2+5)})});
+  t('Incidencias de PRL',50,720,'600 28px Barlow,Arial,sans-serif');
+  if(G.inc.length)G.inc.forEach((k,i)=>{t(INC[k][0],50,762+i*34,'500 24px Barlow,Arial,sans-serif');t(INC[k][2]==='mg'?'muy grave':'−'+coma(INC[k][1]),760,762+i*34,'600 24px "IBM Plex Mono",monospace','#BE2A17','right')});
+  else t('Ninguna',50,762,'500 24px Barlow,Arial,sans-serif');
+  t('Código de comprobación',50,1110,'500 22px Barlow,Arial,sans-serif','#55615B');t(cod,50,1150,'600 34px "IBM Plex Mono",monospace');
+  return C}
+function pdfDesde(jpegDataUrl){
+  const bin=atob(jpegDataUrl.split(',')[1]),img=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)img[i]=bin.charCodeAt(i);
+  const enc=s=>new TextEncoder().encode(s);const trozos=[];let pos=0;const off=[];
+  const add=b=>{trozos.push(b);pos+=b.length};
+  add(enc('%PDF-1.4\n'));
+  const obj=(n,s)=>{off[n]=pos;add(enc(`${n} 0 obj\n${s}\nendobj\n`))};
+  obj(1,'<< /Type /Catalog /Pages 2 0 R >>');
+  obj(2,'<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+  obj(3,'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /XObject << /I 4 0 R >> >> /Contents 5 0 R >>');
+  off[4]=pos;add(enc(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width 1684 /Height 1190 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${img.length} >>\nstream\n`));add(img);add(enc('\nendstream\nendobj\n'));
+  const c='q 842 0 0 595 0 0 cm /I Do Q';obj(5,`<< /Length ${c.length} >>\nstream\n${c}\nendstream`);
+  const xr=pos;let tabla='xref\n0 6\n0000000000 65535 f \n';for(let i=1;i<=5;i++)tabla+=String(off[i]).padStart(10,'0')+' 00000 n \n';
+  add(enc(tabla+`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xr}\n%%EOF\n`));
+  const out=new Uint8Array(pos);let k=0;trozos.forEach(t=>{out.set(t,k);k+=t.length});return out}
+async function descargar(){const data=pdfDesde(G.cert.img);const nom='Escuadradora_'+normal(G.nombre).toLowerCase().replace(/(^| )\w/g,c=>c.toUpperCase()).replace(/ /g,'_')+'.pdf';
+  const dl=await dlP;
+  if(dl){try{await dl.save({filename:nom,data:new Blob([data],{type:'application/pdf'})});aviso('Certificado guardado. Súbelo a la tarea de Classroom.','bien')}catch(e){if(e&&e.code!=='declined')aviso('No se ha podido descargar aquí. Haz una captura del certificado y súbela a Classroom.','mal')}}
+  else{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/pdf'}));a.download=nom;a.click();aviso('Certificado guardado. Súbelo a la tarea de Classroom.','bien')}}
+async function comprobarCert(n,c){const m=/^(\d+)-(\d+)-(\d+)-(\d{12})-([0-9A-F]{8})$/.exec(c.trim().toUpperCase());if(!m||!n.trim())return {ok:false};const datos=`${m[1]}-${m[2]}-${m[3]}-${m[4]}`;if(await firma(n,datos)!==m[5])return {ok:false};return {ok:true,nota:coma(m[1]/100),ap:coma(m[2]/10,1),tab:m[3],f:`${m[4].slice(6,8)}/${m[4].slice(4,6)}/${m[4].slice(0,4)} ${m[4].slice(8,10)}:${m[4].slice(10)}h`}}
+
+/* ---------- panel ---------- */
+const op=(act,id,tit,s,si)=>`<button class="op${si?' si':''}" data-a="${act}" data-v="${id}"><i>${si?'✓':''}</i><span>${tit}${s?`<small>${s}</small>`:''}</span></button>`;
+function tablaEncargo(){return BOARDS.map(B=>`<div class="grp">${B.mat} · tablero 2440 × 1220${B.beta?' · con beta':''}</div><table><tr><th>Pieza</th><th class="n">Uds</th><th class="n">Largo</th><th class="n">Ancho</th></tr>${B.p.map(p=>`<tr><td>${p[0]}</td><td class="n">${p[1]}</td><td class="n">${p[2]}</td><td class="n">${p[3]}</td></tr>`).join('')}</table>`).join('')}
+function cuadro(){const t=G.tec,ld=(e,v)=>t.eje===e&&t.buf?t.buf:v,n=[1,2,3,4,5,6,7,8,9];
+  return `<div class="cm"><div class="cm-sup"><div class="cm-led"><div class="led${t.eje==='alt'?' act':''}">${ld('alt',G.alt)}</div><div class="cinta" title="Inclinación del disco: visor averiado"></div><div class="led${t.eje==='guia'?' act':''}">${ld('guia',G.guia.toFixed(1))}</div><div class="led">5000</div></div>
+  <div class="cm-tec"><button class="k fn${t.eje==='alt'?' on':''}" data-a="eje" data-v="alt">Altura</button><button class="k fn${t.eje==='guia'?' on':''}" data-a="eje" data-v="guia">Guía</button>${n.map(d=>`<button class="k" data-a="dig" data-v="${d}">${d}</button>`).join('')}<button class="k" data-a="kc">C</button><button class="k" data-a="dig" data-v="0">0</button><button class="k" data-a="dig" data-v=".">·</button><button class="k st" data-a="kstart">Start</button><button class="k sp" data-a="kstop">Stop</button></div></div>
+  <div class="cm-inf"><button class="emer" data-a="paro" aria-label="Paro de emergencia">STOP</button><button class="bv${G.on?' vivo':''}" data-a="marcha" aria-label="Arrancar el disco"><span>Disco</span></button><button class="bv" disabled aria-label="Incisor, no se usa"><span>Incisor</span></button><button class="br" data-a="paro" aria-label="Parar el disco"><span>Paro</span></button></div></div>`}
+function etapas(){const nombres=['Plano','Preparar',...BOARDS.map(B=>B.mat),'Limpiar'];const f=G.fase;
+  const idx=f==='inicio'?-1:f==='plano'?0:['epi','disco','cambio','puesto'].includes(f)?1:(f==='altura'||f==='corte')?2+G.b:f==='limpieza'?5:99;
+  $('#etapas').innerHTML=nombres.map((l,i)=>`<span class="${i<idx?'ok':i===idx?'on':''}">${l}</span>`).join('')}
+function mini(s){const b=BOARDS[G.b];let e=G.planes[G.b].map(p=>`<rect x="${p.x}" y="${H0-p.y-p.h}" width="${p.w}" height="${p.h}" fill="#BC986C" stroke="#5E4426" stroke-width="5"/>`).join('');
+  if(s.t==='sanear')e+=`<rect x="${s.R.x0}" y="${H0-M*3}" width="${s.R.x1-s.R.x0}" height="${M*3}" fill="#EE6049"/>`;
+  else if(s.t==='testa')e+=`<rect x="0" y="${H0-s.R.y1}" width="${M*3}" height="${s.R.y1-s.R.y0}" fill="#EE6049"/>`;
+  else{const R=s.R;e+=`<rect x="${R.x0}" y="${H0-R.y1}" width="${R.x1-R.x0}" height="${R.y1-R.y0}" fill="#8DB6FF" fill-opacity=".32" stroke="#8DB6FF" stroke-width="9"/>`;
+    e+=s.a==='x'?`<line x1="${s.c}" y1="${H0-R.y0}" x2="${s.c}" y2="${H0-R.y1}" stroke="#EE6049" stroke-width="15"/>`:`<line x1="${R.x0}" y1="${H0-s.c}" x2="${R.x1}" y2="${H0-s.c}" stroke="#EE6049" stroke-width="15"/>`;
+    e+=s.a==='x'?`<line x1="${R.x0}" y1="${H0-R.y0}" x2="${R.x0}" y2="${H0-R.y1}" stroke="#63D192" stroke-width="18"/>`:`<line x1="${R.x0}" y1="${H0-R.y0}" x2="${R.x1}" y2="${H0-R.y0}" stroke="#63D192" stroke-width="18"/>`}
+  return `<svg id="mini" viewBox="-20 -20 ${W0+40} ${H0+40}"><rect width="${W0}" height="${H0}" fill="#EDE3D2"/>${e}</svg>`}
+function pintaLista(){const mesa=(G.fase==='corte'||G.fase==='altura')&&G.mesa.length?`<h3>Mesa de apoyo</h3><div class="mesa">${mesaHtml()}</div>`:'';$('#lista').innerHTML=mesa+BOARDS.map((B,b)=>{const P=G.planes[b],n=P.filter(p=>!G.hechas.has(p.id)).length,gr=new Map();
+    P.forEach(p=>{const L=Math.max(p.w,p.h),A=Math.min(p.w,p.h),k=L+'x'+A;if(!gr.has(k))gr.set(k,{L,A,nombres:new Set(),ids:[]});const g=gr.get(k);g.nombres.add(p.n);g.ids.push(p.id)});
+    return `<h3 class="${n?'':'ok'}">${B.mat}<small>${n?'Faltan '+n:'Hecho'}</small></h3><ul>${[...gr.values()].map(g=>{const q=g.ids.filter(i=>!G.hechas.has(i)).length,ok=!q;return `<li class="${ok?'ok':''}"><i>${ok?'✓':''}</i><span>${[...g.nombres].join(', ')}</span><b>${q}</b><small>${g.L} × ${g.A}</small></li>`}).join('')}</ul>`}).join('')}
+function pinta(){etapas();pintaLista();$('#nota').textContent=coma(nota());const f=G.fase;let h='';
+  if(f==='inicio'){h=G.prof?panelProf():`<h2>Encargo: estantería de prácticas</h2><p class="ins">Dibuja el plano de corte de cada tablero y corta todas las piezas. Al terminar recibes un certificado para subir a Classroom.</p>${tablaEncargo()}<label class="ayu" for="nom" style="display:block;margin:0 0 4px">Tu nombre y apellidos</label><input class="txt" id="nom" autocomplete="off" value="${G.nombre.replace(/"/g,'')}"><button class="pri" data-a="empezar">Empezar el turno</button><button class="sec" data-a="demo">Ver una demostración</button><button class="sec" data-a="prof">Soy el profesor: comprobar un certificado</button>`}
+  if(f==='plano'){const P=G.planes[G.bi],B=BOARDS[G.bi],sel=P.find(p=>p.id===G.sel);
+    h=`<h2>Plano de corte · ${B.mat}</h2><p class="ins">Pulsa cada pieza para ponerla en el tablero y arrástrala. Se pega a las demás dejando ${KT} mm para el disco. Reserva 10 mm de borde para sanear.${B.beta?' <b>Este tablero tiene beta a lo largo: la longitud de cada pieza, su primera medida, va en el sentido de la beta.</b>':''}</p><div class="lista">${P.map(p=>op('pz',p.id,p.n,p.w+' × '+p.h,p.on)).join('')}</div><div class="gir" style="margin-top:10px"><button data-a="rot" ${sel?'':'disabled'}>Girar pieza</button><button data-a="qui" ${sel?'':'disabled'}>Quitar pieza</button></div><p class="ayu">Aprovechamiento: <b>${coma(areaP(G.bi)/(W0*H0)*100,1)} %</b> · Mayor resto entero: <b>${coma(restoMayor(P)/1e6)} m²</b></p><button class="pri" data-a="validar">Comprobar plano</button>`}
+  if(f==='epi'){h=`<h2>Antes de la máquina</h2><p class="ins">Vas a cortar tableros. ¿Qué llevas puesto?</p><div class="lista">${EPIS.map(e=>op('epi',e.id,e.t,'',G.epi.has(e.id))).join('')}</div><button class="pri" data-a="epiOK">Listo</button>`}
+  if(f==='disco'){h=`<h2>Disco según el material</h2><p class="ins">En la máquina está montado el disco de 24 dientes, de la clase anterior. Vas a cortar <b>tableros</b> de DM y rechapado. ¿Cuál necesitas?</p><div class="lista">${DISCOS.map(d=>op('disco',d.id,d.t,d.s,G.disco===d.id)).join('')}</div><button class="pri" data-a="discoOK" ${G.disco?'':'disabled'}>Elegir este disco</button>`}
+  if(f==='cambio'){const hechos=CAMBIO.slice(0,G.cambio).map(t=>`<li>✓ ${t}</li>`).join('');const quedan=G.orden.filter(i=>i>=G.cambio);h=`<h2>Cambia el disco</h2><p class="ins">Pulsa los pasos en el orden correcto.</p><ul class="hecho">${hechos}</ul><div class="lista">${quedan.map(i=>op('paso',i,CAMBIO[i],'',false)).join('')}</div>`}
+  if(f==='puesto'){h=`<h2>Tu puesto</h2><p class="ins">¿Dónde te colocas para cortar?</p><div class="lista">${op('puesto','izq','A la izquierda del disco, junto al carro','',false)}${op('puesto','linea','Justo detrás de la línea del disco','Para ver mejor el corte',false)}</div>`}
+  if(f==='altura'){const B=BOARDS[G.b];h=`<h2>Altura para ${B.mat}</h2><p class="ins">Tablero nuevo de ${B.g} mm. Con el disco parado, ajusta la altura en el cuadro: pulsa <b>Altura</b>, escribe la medida y pulsa <b>Start</b>. El disco debe sobresalir del tablero la altura de un diente, de 10 a 15 mm.</p><svg id="lado" viewBox="0 0 340 130"></svg><div class="res" id="altv" style="margin-bottom:10px"></div>${cuadro()}<button class="pri" data-a="altOK" ${G.on?'disabled':''}>Dejar a esta altura</button>`}
+  if(f==='corte'&&G.sub==='elegir'){h=`<div class="ayu" style="margin:0 0 2px">${BOARDS[G.b].mat}</div><h2>Mesa de apoyo</h2><p class="ins">Elige la pieza que subes a la máquina. Primero saca todas las tiras y después córtalas a largo.</p><div class="solomov">${mesaHtml()}</div>`}
+  else if(f==='corte'){const s=paso(),B=BOARDS[G.b],mon=G.sub==='montaje',d=mon?'':'disabled';
+    const tit=s.t==='sanear'?'Sanear un canto':s.t==='testa'?'Sanear la cabeza':'Corte según tu plano';
+    const ins=s.t==='corte'?`Línea roja: a <b>${n1(s.m)} mm</b> de la referencia. El canto verde va contra la guía o el tope.`:'Un canto contra la regla y el borde en bruto hacia el disco, con unos 10 mm sobresaliendo.';
+    h=`<div class="ayu" style="margin:0 0 2px">${B.mat} · corte ${G.paso+1}</div><h2>${tit}</h2><div class="cab2">${mini(s)}<p class="ins">${ins}</p></div>${cuadro()}<div class="est" id="estado">${estado()}</div>
+    <div class="fila2">${op('prot','','Protector bajado','',G.prot)}${op('asp','','Aspiración','',G.asp)}</div>
+    <div class="gir"><button data-a="gir" data-v="1" ${d}>Girar ↻</button><button data-a="volt" ${d}>Voltear</button><button data-a="mover" data-v="-5" ${d}>◄ 5</button><button data-a="mover" data-v="5" ${d}>5 ►</button><button data-a="aMesa" ${d}>A la mesa</button><button data-a="vista">${G.vista==='maquina'?'Acercar':'Máquina entera'}</button></div>
+    <div class="seg"><button data-a="uso" data-v="tope" class="${G.uso==='tope'?'on':''}" ${d}>Tope abatible</button><button data-a="uso" data-v="guia" class="${G.uso==='guia'?'on':''}" ${d}>Guía paralela</button></div>
+    <div class="seg"><button data-a="adel" data-v="1" class="${G.adel?'on':''}" ${d}>Guía adelantada</button><button data-a="adel" data-v="0" class="${G.adel?'':'on'}" ${d}>Guía retrasada</button></div>
+    <div class="campo"><label for="med">Tope en la regla, distancia al disco (mm)</label><input id="med" type="number" value="${G.tope}" ${d}><button data-a="med" data-v="-10" ${d}>−10</button><button data-a="med" data-v="-1" ${d}>−1</button><button data-a="med" data-v="1" ${d}>+1</button><button data-a="med" data-v="10" ${d}>+10</button></div>
+    <div class="seg"><button data-a="fin" data-v="emp" ${G.pausa?'':'disabled'}>Terminar con empujador</button><button data-a="fin" data-v="mano" ${G.pausa?'':'disabled'}>Terminar con la mano</button></div>
+    <button class="pri" style="margin-top:0" data-a="retirar" ${G.sub==='hecho'?'':'disabled'}>Retirar la pieza</button>`;
+  }
+  if(f==='limpieza'){h=`<h2>Fin del trabajo</h2><p class="ins">Todas las piezas están cortadas. ¿Qué haces con el puesto?</p><div class="lista">${op('limp','si','Parar la máquina, recoger retales, limpiar con cepillo y dejarla desconectada','',false)}${op('limp','no','Dejarlo como está para el siguiente','',false)}</div>`}
+  if(f==='fin'){const n=nota();h=`<h2>Juego completado</h2><p class="ins"><b>${G.nombre}</b></p><p class="ins">Nota PRL: <b>${coma(n)}</b>${n===0?' (una incidencia muy grave o tres graves dejan la nota en 0)':''} · Tableros usados: <b>${G.tableros}</b> · Aprovechamiento: <b>${coma(aprov(),1)} %</b></p>${G.inc.length?`<ul class="inc">${G.inc.map(k=>`<li><span>${INC[k][0]}</span><b>${INC[k][2]==='mg'?'muy grave':'−'+coma(INC[k][1])}</b></li>`).join('')}</ul>`:''}${G.cert?`<img class="cert" src="${G.cert.img}" alt="Certificado de ${G.nombre}"><span class="cod">${G.cert.cod}</span><button class="pri" data-a="desc">Descargar certificado (PDF)</button><p class="ayu">Súbelo a la tarea de Classroom. Si no se descarga, haz una captura de esta pantalla.</p>`:(G.demo?'<p class="ayu">Las demostraciones no generan certificado. Para obtenerlo hay que jugar el turno.</p>':'<p class="ayu">Preparando el certificado…</p>')}<button class="sec" data-a="otra">Volver a empezar</button>`}
+  $('#panel').innerHTML=h;
+  if(f==='altura')pintaLado();
+  const med=$('#med');if(med)med.onchange=e=>ponMed(+e.target.value);
+}
+function panelProf(){const r=G.prof.r;return `<h2>Comprobar un certificado</h2><p class="ins">Copia el nombre tal como aparece en el certificado y su código.</p><label class="ayu" for="pn" style="display:block;margin:0 0 4px">Nombre y apellidos</label><input class="txt" id="pn" autocomplete="off" value="${(G.prof.n||'').replace(/"/g,'')}"><label class="ayu" for="pc" style="display:block;margin:0 0 4px">Código</label><input class="txt" id="pc" autocomplete="off" value="${(G.prof.c||'').replace(/"/g,'')}"><button class="pri" data-a="compCert">Comprobar</button>${r?(r.ok?`<div class="res" style="color:var(--ve);margin-top:12px">Certificado válido</div><table><tr><td>Fecha</td><td class="n">${r.f}</td></tr><tr><td>Nota PRL</td><td class="n">${r.nota}</td></tr><tr><td>Tableros</td><td class="n">${r.tab}</td></tr><tr><td>Aprovechamiento</td><td class="n">${r.ap} %</td></tr></table>`:`<div class="res" style="color:var(--ro);margin-top:12px">El código no corresponde a ese nombre</div>`):''}<button class="sec" data-a="volver">Volver</button>`}
+function estado(){const s=paso(),p=G.pz;if(s.t!=='corte')return `Tablero ${n1(p.w)} × ${n1(p.h)}<br>${G.sub==='hecho'?'Cortado':'Sobresale '+Math.round(sobra())+' mm'}`;return `Pieza ${n1(p.w)} × ${n1(p.h)}<br>${G.uso==='tope'?'Tope a '+G.tope:'Guía a '+G.guia} mm`}
+function pintaLado(){const a=G.alt,g=BOARDS[G.b].g,k=2.4,m=118,xc=170,R=150*k,cy=m-a*k+R;$('#lado').innerHTML=`<defs><clipPath id="cl"><rect width="340" height="${m}"/></clipPath></defs><circle cx="${xc}" cy="${cy}" r="${R}" fill="#9FB0AD" clip-path="url(#cl)"/><rect x="0" y="${m-g*k}" width="340" height="${g*k}" fill="#B8946A"/><rect x="0" y="${m}" width="340" height="12" fill="#5B6E6C"/>`;$('#altv').textContent=`${a} mm sobre la mesa · sobresale ${a-g} mm`}
+function ponMed(v){if(isNaN(v)||G.sub!=='montaje')return;v=Math.min(Math.max(Math.round(v),20),2440);G.tope=v;situar();G.fy=-220-G.pz.h;pinta()}
+const accion=async e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,v=b.dataset.v;
+  if(a==='empezar'){const n=($('#nom').value||'').replace(/[<>"&]/g,'').trim().replace(/\s+/g,' ');if(n.length<5||!n.includes(' ')){G.nombre=n;aviso('Escribe tu nombre y al menos un apellido.','mal');return}G.nombre=n;G.t0=Date.now();G.fase='plano';G.bi=0;pinta()}
+  if(a==='prof'){G.nombre=$('#nom').value;G.prof={n:'',c:'',r:null};pinta()}
+  if(a==='volver'){G.prof=null;pinta()}
+  if(a==='compCert'){const n=$('#pn').value,c=$('#pc').value;G.prof={n,c,r:await comprobarCert(n,c)};pinta()}
+  if(a==='pz'){const P=G.planes[G.bi],p=P.find(x=>x.id===v);if(p.on){G.sel=p.id}else{colocaLibre(p,P);G.sel=p.id}pinta()}
+  if(a==='rot'){const P=G.planes[G.bi],p=P.find(x=>x.id===G.sel);if(p){[p.w,p.h]=[p.h,p.w];p.x=Math.min(p.x,W0-p.w);p.y=Math.min(p.y,H0-p.h);pinta()}}
+  if(a==='qui'){const p=G.planes[G.bi].find(x=>x.id===G.sel);if(p){p.on=false;G.sel=null;pinta()}}
+  if(a==='validar'){const er=validar(G.bi);if(er){aviso(er,'mal');return}aviso('Plano correcto: '+(G.cortes[G.bi].length+2)+' cortes contando el saneado.','bien');G.sel=null;if(G.bi<BOARDS.length-1){G.bi++}else G.fase='epi';pinta()}
+  if(a==='epi'){G.epi.has(v)?G.epi.delete(v):G.epi.add(v);pinta()}
+  if(a==='epiOK'){const mal=EPIS.filter(x=>!!x.ok!==G.epi.has(x.id));if(mal.length){falta('epi');const gu=mal.some(x=>x.id==='guantes');G.epi=new Set(EPIS.filter(x=>x.ok).map(x=>x.id));aviso(gu?'Prohibido trabajar con guantes: se pueden enganchar en el disco y arrastrar la mano.':'Falta un equipo obligatorio: '+mal.map(x=>x.t.toLowerCase()).join(', ')+'. Se descuenta y te lo pones.','mal')}else aviso('Bien equipado.','bien');G.fase='disco';pinta()}
+  if(a==='disco'){G.disco=v;pinta()}
+  if(a==='discoOK'){if(G.disco==='c'){aviso('Correcto: para tablero, disco de muchos dientes.','bien');G.fase='cambio'}else aviso(G.disco==='a'?'Ese es el que está montado y sirve para maciza al hilo. En DM deja mal corte.':'Ese es para tronzar maciza. Busca el pensado para tableros.','mal');pinta()}
+  if(a==='paso'){const i=+v;if(i===G.cambio){G.cambio++;if(G.cambio===CAMBIO.length){aviso('Disco cambiado y comprobado.','bien');G.fase='puesto'}}else if(G.cambio<2&&i>=2){falta('conectada');aviso('Nunca toques el disco con la máquina conectada. Es una falta muy grave: la nota de PRL se queda en 0.','mal')}else aviso('Todavía no: falta un paso antes de ese.','mal');pinta()}
+  if(a==='puesto'){G.puesto=v;if(v==='izq'){aviso('Bien. Nunca en la línea de corte.','bien');empiezaTablero(0)}else aviso('En la línea de corte, un recorte puede salir despedido hacia ti. Colócate a la izquierda, junto al carro.','mal')}
+  if(a==='eje'){G.tec={eje:v,buf:''};pinta()}
+  if(a==='dig'){if(!G.tec.eje){aviso('Elige primero Altura o Guía.');return}if(G.tec.buf.length<6)G.tec.buf+=v;pinta()}
+  if(a==='kc'){G.tec.buf='';pinta()}
+  if(a==='kstop'){G.tec={eje:null,buf:''};pinta()}
+  if(a==='kstart'){const{eje,buf}=G.tec,n=parseFloat(buf);if(!eje||isNaN(n)){aviso('Elige Altura o Guía, escribe la medida y pulsa Start.');return}
+    if(eje==='alt'){if(G.fase!=='altura'){aviso('La altura ya está ajustada para este tablero.');G.tec={eje:null,buf:''};pinta();return}if(G.on){aviso('Para el disco antes de mover la altura.','mal');return}G.alt=Math.min(Math.max(n,0),120)}
+    else{if(G.fase!=='corte'||G.sub==='avance'||G.sub==='hecho'){aviso('Ahora no se puede mover la guía.');return}G.guia=Math.round(Math.min(Math.max(n,20),2440));if(G.pz){situar();G.fy=-220-G.pz.h}}
+    G.tec={eje:null,buf:''};pinta()}
+  if(a==='altOK'){const g=BOARDS[G.b].g,s=G.alt-g;if(s<10)aviso('Sobresale '+s+' mm. Demasiado bajo: roza más dientes y quema el corte.','mal');else if(s>15)aviso('Sobresale '+s+' mm. Demasiado alto: deja más disco al descubierto y astilla más la cara de abajo.','mal');else{aviso('Altura correcta: el disco sobresale la altura de un diente.','bien');G.fase='corte';colocar();pinta()}}
+  if(a==='marcha'){G.on=true;pinta()}
+  if(a==='paro'){G.on=false;pinta()}
+  if(a==='prot'){G.prot=!G.prot;pinta()}
+  if(a==='asp'){G.asp=!G.asp;pinta()}
+  if(a==='vista'){G.vista=G.vista==='maquina'?'corte':'maquina';pinta()}
+  if(a==='gir'){girar(+v);pinta()}
+  if(a==='volt'){voltear();pinta()}
+  if(a==='mover'){G.pz.x+= +v;pinta()}
+  if(a==='uso'){G.uso=v;situar();pinta()}
+  if(a==='med'){ponMed(G.tope+ +v)}
+  if(a==='adel'){G.adel=v==='1';pinta()}
+  if(a==='fin'){G.pausa=false;G.empu=true;if(v==='emp')aviso('Mantén pulsada la pieza para terminar el corte.','bien');else{falta('manos');aviso('Nunca termines con la mano. Coges el empujador y sigues.','mal')}pinta()}
+  if(a==='retirar')retirar();
+  if(a==='limp'){if(v==='no'){falta('limpio');aviso('El puesto se deja limpio y ordenado al terminar. Se descuenta.','mal')}G.on=false;G.fase='fin';pinta();emitir()}
+  if(a==='desc')descargar();
+  if(a==='otra'){BOARDS=BOARDS_JUEGO;G=nuevo();$('#msg').hidden=true;pinta()}
+  if(a==='demo')demo();
+  if(a==='coge')coge(+v);
+  if(a==='aMesa')aMesa();
+};
+$('#panel').onclick=accion;$('#lista').onclick=accion;
+
+/* ---------- dibujo ---------- */
+const cv=$('#cv'),c=cv.getContext('2d');let esc=.3,ox=0,oy=0,W=0,H=0;
+function medir(){const r=$('#maq').getBoundingClientRect(),d=devicePixelRatio||1;W=r.width;H=r.height;cv.width=W*d;cv.height=H*d;c.setTransform(d,0,0,d,0,0)}
+new ResizeObserver(medir).observe($('#maq'));
+const X=x=>ox+x*esc,Y=y=>oy-y*esc;
+const toW=(px,py)=>[(px-ox)/esc,(oy-py)/esc];
+function rc(x,y,w,h,f,s){c.beginPath();c.rect(X(x),Y(y+h),w*esc,h*esc);if(f){c.fillStyle=f;c.fill()}if(s){c.strokeStyle=s;c.lineWidth=1;c.stroke()}}
+function txt(t,x,y,col='#EEF3EC',al='center',sz=12){c.fillStyle=col;c.textAlign=al;c.font=`500 ${sz}px "IBM Plex Mono",monospace`;c.fillText(t,X(x),Y(y))}
+function borde(x0,y0,x1,y1,t){c.beginPath();const n=24;for(let i=0;i<=n;i++){const k=i/n;let dx=0,dy=0;if(t==='b'){const w=(Math.sin(k*23+x0*.1)*5+Math.sin(k*61+y0*.1)*3);if(x0===x1)dx=w;else dy=w}const px=X(x0+(x1-x0)*k+dx),py=Y(y0+(y1-y0)*k+dy);i?c.lineTo(px,py):c.moveTo(px,py)}c.strokeStyle=t==='c'?'#63D192':t==='n'?'#5E4426':'#7A5A34';c.lineWidth=t==='c'?4:t==='b'?2.5:1.5;c.stroke()}
+function rayado(x,y,w,h){c.save();c.beginPath();c.rect(X(x),Y(y+h),w*esc,h*esc);c.clip();c.fillStyle='rgba(238,96,73,.33)';c.fillRect(X(x),Y(y+h),w*esc,h*esc);c.strokeStyle='#E23E25';c.lineWidth=1.4;for(let i=-H;i<W+H;i+=9){c.beginPath();c.moveTo(i,0);c.lineTo(i+H,H);c.stroke()}c.restore()}
+function pieza(p,py){rc(p.x,py,p.w,p.h,'#BC986C');if(BOARDS[G.b].beta&&p.beta)vetas(p.x,py,p.w,p.h,p.beta,'rgba(94,68,38,.45)');borde(p.x,py,p.x,py+p.h,p.e.L);borde(p.x+p.w,py,p.x+p.w,py+p.h,p.e.R);borde(p.x,py,p.x+p.w,py,p.e.B);borde(p.x,py+p.h,p.x+p.w,py+p.h,p.e.T)}
+function camara(){
+  let xl=-1050,xr=820,h=1000,cy=-100;
+  if(G.fase==='corte'&&G.pz){const p=G.pz;xl=Math.min(p.x-120,-700);xr=Math.max(p.x+p.w+120,G.uso==='guia'&&paso().t==='corte'?G.guia+160:520,520);h=p.h;
+    if(G.recorte)xr=Math.max(xr,G.recorte.x+G.recorte.w+120)}
+  if(G.fase!=='corte'||!G.pz||G.vista==='maquina'){const a=-2750,b=2650,sp=6300;esc=Math.min(W/(b-a),H/sp);ox=W/2-(a+b)/2*esc;oy=H/2-350*esc;return}
+  const spanY=Math.max(h,1100)+700;esc=Math.min(W/(xr-xl),H/spanY,.62);
+  if(G.fase==='corte'&&G.pz){const hw=H/(2*esc),pc=G.fy+G.feed+h/2,lim=Math.max(0,hw-300);cy=Math.min(Math.max(pc,-lim),lim)}
+  ox=W/2-(xl+xr)/2*esc;oy=H/2+cy*esc}
+let giro=0;
+function vetas(x,y,w,h,dir,col){c.save();c.beginPath();c.rect(X(x),Y(y+h),w*esc,h*esc);c.clip();c.strokeStyle=col;c.lineWidth=1;const n=Math.max(4,Math.round((dir==='h'?h:w)/45));for(let i=0;i<n;i++){const k=(i+.5)/n;c.beginPath();for(let j=0;j<=16;j++){const t=j/16,o=Math.sin(t*9+i*1.7)*9;const px=dir==='h'?x+w*t:x+w*k+o,py=dir==='h'?y+h*k+o:y+h*t;j?c.lineTo(X(px),Y(py)):c.moveTo(X(px),Y(py))}c.stroke()}c.restore()}
+function dibujaPlano(){const P=G.planes[G.bi];esc=Math.min((W-40)/W0,(H-40)/H0);ox=(W-W0*esc)/2;oy=(H+H0*esc)/2;
+  rc(0,0,W0,H0,'#EDE3D2','#7A5A34');
+  rayado(0,0,W0,M);rayado(0,H0-M,W0,M);rayado(0,0,M,H0);rayado(W0-M,0,M,H0);
+  const beta=BOARDS[G.bi].beta;
+  if(beta)vetas(0,0,W0,H0,'h','rgba(122,90,52,.3)');
+  P.filter(p=>p.on).forEach(p=>{rc(p.x,p.y,p.w,p.h,p.id===G.sel?'#D8AF78':'#BC986C');if(beta)vetas(p.x,p.y,p.w,p.h,p.w===p.l?'h':'v',p.w===p.l?'rgba(94,68,38,.45)':'rgba(226,62,37,.75)');c.strokeStyle=p.id===G.sel?'#F2C230':'#5E4426';c.lineWidth=p.id===G.sel?3:1.5;c.strokeRect(X(p.x),Y(p.y+p.h),p.w*esc,p.h*esc);
+    txt(p.n,p.x+p.w/2,p.y+p.h/2+40,'#17201C','center',13);if(p.w*esc>75)txt(p.w+' × '+p.h,p.x+p.w/2,p.y+p.h/2-70,'#17201C','center',12)});
+  txt('2440 × 1220 · '+BOARDS[G.bi].mat,W0/2,H0+32,'#EEF3EC','center',14)}
+function dibuja(){
+  c.clearRect(0,0,W,H);
+  if(G.fase==='plano'){dibujaPlano();return}
+  camara();
+  const enCorte=G.fase==='corte'&&G.pz,on=G.rpm>.02,fy=enCorte?G.fy:-900,mueve=enCorte&&carroMueve(),feed=enCorte?G.feed:0;
+  const larX=Math.max(1800,-(ox/esc)+100);
+  rc(4,-1000,1900,2000,'#8FA19D','#62757A');for(let i=1;i<10;i++)rc(4,-1000+i*200,1900,1.5/esc,'rgba(0,0,0,.08)');
+  /* regla escuadra */
+  const ry=!enCorte?1560:(mueve?fy+G.pz.h+feed:2400),cb=ry+40-3200;
+  rc(-1500,ry-900,1080,16,'#5B6E6C');rc(-1500,ry-900,16,900,'#5B6E6C');rc(-1000,ry-900,12,900,'#5B6E6C');
+  rc(-320,cb-40,200,40,'#1C2B28');
+  rc(-420,cb,416,3200,'#AEBBB7','#62757A');for(let i=1;i<5;i++)rc(-420+i*83,cb,3,3200,'rgba(0,0,0,.18)');txt('CARRO 3200',-212,cb+70,'#2E403E');
+  rc(-3000,ry,2992,40,'#D9E0DD','#475A58');
+  const paso500=esc<.28;for(let m=0;m<=2900;m+=paso500?500:200){rc(-m-1/esc,ry+22,2/esc,18,'#1C2B28');txt(''+m,-m,ry+5,'#1C2B28','center',10)}
+  if(enCorte&&paso().t==='corte'&&G.uso==='tope'){rc(-G.tope-34,ry-70,34,110,'#F2C230','#1C2B28');txt('TOPE '+G.tope,-G.tope-40,ry-60,'#F2C230','right')}
+  /* guía paralela */
+  const gy=(enCorte&&G.adel)?[-1000,300]:[-1490,-190],gx=enCorte&&G.uso==='guia'?G.guia:Math.min(G.guia,900);
+  rc(gx,gy[0],40,gy[1]-gy[0],'#F2C230','#1C2B28');
+  /* línea del disco y zona de peligro */
+  c.setLineDash([7,6]);c.strokeStyle='rgba(238,96,73,.75)';c.lineWidth=1.2;c.beginPath();c.moveTo(X(0),Y(-4000));c.lineTo(X(0),Y(-150));c.stroke();c.setLineDash([]);
+  if(on)rc(-70,-420,140,700,`rgba(238,96,73,${.13*G.rpm})`);
+  if(enCorte){const p=G.pz,py=fy+feed;pieza(p,py);
+    if(G.recorte){const r=G.recorte;rc(r.x,py,r.w,r.h,'#BC986C');if(r.res)rayado(r.x,py,r.w,r.h);else{c.strokeStyle='#5E4426';c.lineWidth=1.5;c.strokeRect(X(r.x),Y(py+r.h),r.w*esc,r.h*esc)}}
+    else if(G.sub!=='hecho'){const s=paso();
+      if(s.t!=='corte'&&p.x+p.w>0)rayado(0,py,p.x+p.w,p.h);
+      if(G.sub==='avance'){c.strokeStyle='#2A1B0C';c.lineWidth=2;c.beginPath();c.moveTo(X(0),Y(Math.max(py,-150)));c.lineTo(X(0),Y(Math.min(py+p.h,150)));c.stroke()}
+      if(G.sub==='montaje'&&s.t!=='corte')txt(Math.round(sobra())+' mm',60,py+p.h/2,'#17201C','left',15);
+      if(s.t==='corte'&&G.sub==='montaje')txt((G.uso==='tope'?G.tope:G.guia)+' mm',G.uso==='tope'?-G.tope/2:G.guia/2,py+p.h/2,'#17201C','center',15);
+    }
+  }
+  /* disco, divisor y protector */
+  giro+=G.rpm*.9;rc(-3,-150,6,300,'#2B3433');c.strokeStyle='#E8EEEC';c.lineWidth=2;c.setLineDash([6,8]);c.lineDashOffset=-giro*30;c.beginPath();c.moveTo(X(0),Y(-150));c.lineTo(X(0),Y(150));c.stroke();c.setLineDash([]);c.lineDashOffset=0;
+  rc(-2,156,4,70,'#F2C230');
+  if(enCorte&&G.prot)rc(-55,-170,110,400,'rgba(242,194,48,.26)','#F2C230');else{c.setLineDash([5,5]);rc(-55,-170,110,400,null,'#F2C230');c.setLineDash([])}
+  rc(55,20,1700,22,'rgba(70,90,88,.9)');rc(1755,-70,130,130,'#C9B98A','#3A4F4C');
+  if(arr&&arr.dec==='feed'){c.beginPath();c.arc(arr.px,arr.py,13,0,7);c.fillStyle=G.empu?'#F2C230':'#E8B99A';c.fill();c.strokeStyle='#1C2B28';c.lineWidth=1.5;c.stroke()}
+  const opx=X(G.puesto==='linea'?0:-560);c.beginPath();c.ellipse(opx,H-24,20,11,0,0,7);c.fillStyle='#8DB6FF';c.fill();c.beginPath();c.arc(opx,H-24,7,0,7);c.fillStyle='#E8B99A';c.fill();
+}
+/* ---------- interacción ---------- */
+let arr=null,dragPl=null,last=0,teclaArriba=false;
+const pos=e=>{const r=cv.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top]};
+function sobrePieza(wx,wy){if(G.fase!=='corte'||G.sub==='hecho'||!G.pz)return false;const p=G.pz,py=G.fy+G.feed,ry=G.fy+p.h+G.feed;return (wx>=p.x&&wx<=p.x+p.w&&wy>=py&&wy<=py+p.h)||(conRegla()&&wx<-8&&wy>ry&&wy<ry+60)}
+cv.addEventListener('pointerdown',e=>{const[px,py]=pos(e),[wx,wy]=toW(px,py);
+  if(G.fase==='plano'){const P=G.planes[G.bi].filter(p=>p.on).reverse().find(p=>wx>=p.x&&wx<=p.x+p.w&&wy>=p.y&&wy<=p.y+p.h);if(P){G.sel=P.id;dragPl={p:P,dx:wx-P.x,dy:wy-P.y};cv.setPointerCapture(e.pointerId);pinta()}return}
+  if(!sobrePieza(wx,wy))return;cv.setPointerCapture(e.pointerId);
+  arr={px,py,ix:px,wx,x0:G.pz.x,dec:null,t:performance.now()};
+  if(paso().t==='corte'||G.sub==='avance'){if(empezarAvance(wx))arr.dec='feed';else{arr=null;pinta()}}});
+cv.addEventListener('pointermove',e=>{const[px,py]=pos(e);
+  if(dragPl){const[wx,wy]=toW(px,py),P=G.planes[G.bi];const[x,y]=iman(dragPl.p,wx-dragPl.dx,wy-dragPl.dy,P);dragPl.p.x=x;dragPl.p.y=y;return}
+  if(!arr)return;arr.px=px;arr.py=py;
+  if(!arr.dec&&Math.abs(px-arr.ix)>4)arr.dec='x';
+  if(arr.dec==='x'){G.pz.x=Math.round(Math.min(arr.x0+(px-arr.ix)/esc,300));const e0=$('#estado');if(e0)e0.innerHTML=estado()}});
+function soltar(){arr=null;if(dragPl){dragPl=null;pinta()}}
+cv.addEventListener('pointerup',soltar);cv.addEventListener('pointercancel',soltar);
+addEventListener('keydown',e=>{if(e.target.matches('input')||G.fase!=='corte'||G.sub==='hecho'||!G.pz)return;
+  if(e.key==='ArrowLeft'||e.key==='ArrowRight'){if(G.sub==='montaje'&&paso().t!=='corte'){G.pz.x+=e.key==='ArrowLeft'?-5:5;$('#estado').innerHTML=estado();e.preventDefault()}}
+  if(e.key==='ArrowUp'){e.preventDefault();teclaArriba=true}});
+addEventListener('keyup',e=>{if(e.key==='ArrowUp')teclaArriba=false});
+function bucle(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;
+  G.rpm+=G.on?Math.min(1-G.rpm,dt/.9):-Math.min(G.rpm,dt/1.4);
+  if(G.fase==='corte'&&G.sub!=='hecho'&&G.pz){
+    if(arr&&!arr.dec&&t-arr.t>180){if(empezarAvance(arr.wx))arr.dec='feed';else{arr=null;pinta()}}
+    let empuja=arr&&arr.dec==='feed';
+    if(teclaArriba){if(G.sub==='avance'||empezarAvance(paso().t==='corte'&&!carroMueve()?300:-700))empuja=true;else teclaArriba=false}
+    if(empuja&&!G.pausa&&G.sub==='avance'){
+      if(!G.on||G.rpm<.5){aviso('El disco se ha parado con la pieza dentro.','mal');arr=null;teclaArriba=false}
+      else{const p=G.pz,s=paso(),v=Math.max(460,(p.h+390)/3.6)*(G.demo?.5:1);G.feed+=v*dt;const b=G.fy+G.feed,sup=b+p.h;
+        if(s.t==='corte'&&s.met==='adel'&&G.uso==='guia'&&!G.adel&&sup>-100){arr=null;teclaArriba=false;retroceso('Retroceso. Con la guía retrasada la pieza pierde el apoyo y el disco la lanza hacia ti. Para cortar a ancho contra la guía, la guía va adelantada.')}
+        else if(s.t==='corte'&&s.met==='retr'&&G.uso==='guia'&&G.adel&&sup>-100){arr=null;teclaArriba=false;retroceso('Retroceso. La pieza cortada queda atrapada entre la guía y el disco. Cuando se usa como tope con el carro, la guía va retrasada, por detrás del disco.')}
+        else if(s.t==='corte'&&G.uso==='guia'&&s.m<=250&&!G.yaPauso&&b>-270){G.yaPauso=true;G.pausa=true;arr=null;teclaArriba=false;aviso('Llegas al final del corte. Elige con qué terminas.');pinta()}
+        else if(b>=FIN){arr=null;teclaArriba=false;terminarCorte()}}
+    }
+  }
+  dibuja();requestAnimationFrame(bucle)}
+let VEL=1;
+async function demo(){
+  VEL=1;BOARDS=BOARDS_DEMO;G=nuevo();G.demo=true;G.nombre='Demostración';const g=G,dedo=$('#dedo'),et=dedo.querySelector('span');$('#app').classList.add('demo');$('#demoStop').hidden=false;$('#demoVel').hidden=false;$('#demoVel').textContent='Ir más rápido';
+  const esp=ms=>new Promise((res,rej)=>setTimeout(()=>G===g?res():rej('fin'),ms*VEL));
+  const lleva=(x,y,txt)=>{dedo.hidden=false;et.textContent=txt;const a=et.offsetWidth+34;dedo.style.transform=`translate(${Math.min(x,innerWidth-a-8)}px,${Math.max(y,0)}px)`};
+  const nombre=el=>{const t=el.getAttribute('aria-label')||(el.querySelector('span')?el.querySelector('span').firstChild.textContent:el.textContent);return t.trim()};
+  const señala=async(el,txt,rap)=>{el.scrollIntoView({block:'nearest'});const r=el.getBoundingClientRect();lleva(r.left+r.width/2,r.top+r.height/2,txt);el.style.outline='3px solid #F2C230';await esp(rap?550:1050)};
+  const pul=async(a,v,rap)=>{const q=a[0]==='.'?a:(v===undefined?`[data-a="${a}"]`:`[data-a="${a}"][data-v="${v}"]`);const el=document.querySelector('#panel '+q)||document.querySelector('#lista '+q);if(!el)throw new Error('no encuentro '+q);await señala(el,'Pulsa: '+nombre(el),rap);dedo.classList.add('toca');await esp(rap?200:420);dedo.classList.remove('toca');el.click();await esp(rap?200:520)};
+  const caja=$('#porque'),leidos=new Set();
+  const pq=t=>{caja.innerHTML='<b>Por qué</b>'+t;caja.hidden=false};
+  /* Lo que se hace va en el aviso; el porqué se queda a la vista durante toda la operación. La primera vez da tiempo a leerlo. */
+  const di=async(t,por,ms=2400)=>{aviso(t,'bien');let e=ms;if(por){pq(por);if(!leidos.has(por)){leidos.add(por);e=Math.max(ms,Math.min(9000,por.length*50))}}await esp(e)};
+  const POR_CAMBIO=['Sin corriente el disco sigue girando un buen rato, y corta igual.','Si se pone en marcha por error con la mano en el disco, la lesión es gravísima.','Solo se abre con la máquina sin corriente: aquí el disco queda a la vista.','Los dientes tienen que entrar en el sentido de giro. Al revés no corta, quema la pieza y puede dar retroceso.','Una tuerca floja deja suelto el disco, y una llave olvidada sale despedida al arrancar.','El cuchillo divisor mantiene abierto el corte para que la pieza no pise el disco y salga hacia ti.','Antes de dar corriente se comprueba a mano que nada roza con el disco.','El disco no se pone en marcha sin su protección en su sitio.'];
+  const tecla=async(eje,v)=>{await pul('eje',eje);for(const d of String(v))await pul('dig',d,true);await pul('kstart')};
+  const enPieza=()=>{const r=cv.getBoundingClientRect(),p=G.pz;return [r.left+X(Math.max(p.x+60,-(p.w)*.5+p.x+p.w-200)),r.top+Y(G.fy+G.feed+p.h/2)]};
+  const empuja=async txt=>{const[wx]=[paso().t==='corte'&&G.uso==='guia'&&G.pz.x+G.pz.w>120?G.pz.x+G.pz.w-40:G.pz.x+40];const sigue=()=>{const r=cv.getBoundingClientRect();lleva(r.left+X(wx),r.top+Y(G.fy+G.feed+G.pz.h/2),txt)};sigue();await esp(1000);teclaArriba=true;dedo.style.transition='none';let n=0;while(G.sub!=='hecho'&&!G.pausa&&teclaArriba){sigue();await esp(60/VEL*VEL);if(++n>900)throw new Error('el avance no termina')}dedo.style.transition=''};
+  try{
+    lleva(innerWidth/2,innerHeight/2,'Empieza la demostración');
+    G.fase='plano';G.bi=0;pinta();await di('Primero se dibuja el plano de corte de cada tablero.','El plano decide el orden de los cortes y cuánto se aprovecha el tablero. Cada corte tiene que ir de lado a lado, porque la escuadradora no se para a mitad de tablero.',2600);
+    const planos=[[[0,10,10],[1,1113.2,10],[2,10,413.2],[3,813.2,413.2],[4,1616.4,413.2]],[[0,10,10],[1,10,313.2],[2,10,616.4],[3,293.2,616.4]],[[0,10,10,1]]];
+    const notas=[['En el DM 25, dos filas de piezas juntas en una esquina.',`Juntas, lo que sobra sale en un solo trozo grande que sirve para otro trabajo. Se reservan 10 mm de borde para sanear y ${KT} mm entre piezas, que es lo que se come el disco.`],['En el rechapado, la longitud de cada pieza va con la beta.','La primera medida del despiece es la longitud y coincide con la beta. Si la giro para aprovechar mejor, la veta de la pieza queda cruzada.'],['La trasera, girada.','El DM no tiene beta: puedo girar la pieza como más me convenga para dejar el mayor resto.']];
+    for(let b=0;b<3;b++){G.bi=b;pinta();await di(notas[b][0],notas[b][1],2600);for(const[i,x,y,gi]of planos[b]){const q=G.planes[b][i];await pul('pz',q.id);if(gi)await pul('rot');const r=cv.getBoundingClientRect();lleva(r.left+X(x+q.w/2),r.top+Y(y+q.h/2),'Arrastra '+q.n+' a su sitio');await esp(1000);q.x=x;q.y=y;G.sel=q.id;pinta();await esp(800)}G.sel=null;pinta();await pul('validar');await esp(1000)}
+    await di('Antes de la máquina: equipos de protección. Sin guantes.','Gafas por lo que salta el disco, protectores por el ruido y calzado por si cae un tablero. La ropa suelta y los guantes pueden engancharse en el disco y arrastrar la mano.');
+    for(const e of EPIS)if(e.ok)await pul('epi',e.id,true);await pul('epiOK');await esp(900);
+    await di('Vamos a cortar tableros: disco de 80 dientes.','Cuantos más dientes, más limpio sale el corte en tablero y rechapado. El de 24 dientes es para madera maciza al hilo y aquí astillaría los cantos.');await pul('disco','c');await pul('discoOK');await esp(700);
+    for(let i=0;i<CAMBIO.length;i++){pq(POR_CAMBIO[i]);await pul('paso',i);await esp(1500)}await esp(700);
+    await di('Me coloco a un lado de la línea del disco.','Si hay retroceso, la pieza sale disparada en la línea del disco. Fuera de ella no me alcanza.',2200);await pul('puesto','izq');await esp(900);
+    for(let b=0;b<BOARDS.length;b++){
+      if(G.on){await pul('.br');await esp(600)}
+      await di(`${BOARDS[b].mat}: el disco debe sobresalir de 10 a 15 mm.`,'Con menos altura no limpia bien el corte; con más, queda más disco al descubierto. Se ajusta siempre con el disco parado.');await tecla('alt',BOARDS[b].g+12);await pul('altOK');await esp(500);
+      await di('Protector bajado y aspiración conectada, antes de arrancar.','El protector cubre el disco y frena lo que salta. La aspiración se lleva el polvo, que en el DM es muy fino y dañino.',2000);await pul('prot');if(!G.asp)await pul('asp');await pul('marcha');await di('Espero a que el disco coja todas sus vueltas.','Si la pieza entra antes de tiempo, el disco se frena y el corte sale mal.',1600);
+      while(G.fase==='corte'&&G.b===b){
+        if(G.sub==='elegir'){const t=G.mesa.find(m=>esTira(opDe(m)))||G.mesa[0];await di(esTira(opDe(t))?'Primero, todas las tiras.':'Ahora, las piezas a largo.',esTira(opDe(t))?'Las tiras salen mientras el tablero sigue grande y estable contra la guía. Después se cortan todas a largo seguidas, sin cambiar la preparación a mitad.':'Cada tira se pone atravesada, con un canto limpio contra la regla, y se corta a su medida.',1800);await pul('coge',t.id)}
+        const s=paso();await esp(600);
+        if(G.pz.w!==s.w){await di('La pieza llega como salió: hay que girarla.','La línea de corte del plano tiene que quedar en línea con el disco.',1400);await pul('gir',1)}
+        if(s.t!=='corte'){await di(s.t==='sanear'?'Saneo el borde del que voy a medir las piezas.':'Saneo la cabeza, de donde saldrán las piezas.',s.t==='sanear'?'Las medidas se toman desde un canto limpio y a escuadra. Solo se sanea el canto que voy a usar de referencia; el resto no hace falta.':'Si la cabeza va en bruto, la primera pieza sale fuera de escuadra y de medida. Se quitan los 10 mm que reservé en el plano.',2000);
+          let q=G.pz.e;if(q.T==='b'&&q.B!=='b'){await pul('gir',1);await pul('gir',1);q=G.pz.e}if(q.R!=='b')await pul('volt');
+          const[px,py]=enPieza();lleva(px,py,'Arrastra hasta sobresalir 10 mm');await esp(900);const ini=G.pz.x,fin=-G.pz.w+10;for(let i=1;i<=24;i++){G.pz.x=Math.round(ini+(fin-ini)*i/24);const e0=$('#estado');if(e0)e0.innerHTML=estado();await esp(45)}pinta();await esp(800);await empuja('Mantén pulsado para empujar')}
+        else{const r=n1(s.w-s.m-K),m=n1(s.m);await di(s.met==='tope'?`Corto ${m} y sobran ${r}: tope del carro.`:s.met==='adel'?`Corte a ancho de ${m}: guía adelantada.`:s.resto?`Corto ${m} y sobran ${r}: guía retrasada como tope.`:`Pieza pequeña: guía retrasada y carro.`,s.met==='tope'?'Lo que sobra no pasa de 100 mm sobre la pieza: la pieza queda sobre el carro, sujeta y medida por el tope.':s.met==='adel'?'Corte a lo largo: el canto limpio tiene que apoyar en la guía durante todo el recorrido, por eso va adelantada. El carro ayuda si el tablero es grande; si no, no se desplaza.':s.resto?'Lo que sobra es mayor que la pieza: así lo grande se queda sobre el carro. La guía va por detrás del disco para que la pieza no quede atrapada entre los dos y salga en retroceso.':'Va sujeta en el carro. La guía retrasada mide sin que la pieza quede atrapada entre guía y disco.',2400);
+          if(s.met==='tope'){await pul('uso','tope');const el=$('#med');await señala(el,'Pon el tope a '+s.m);ponMed(s.m);await esp(700)}else{await pul('uso','guia');await pul('adel',s.met==='adel'?1:0);await tecla('guia',Math.round(s.m))}
+          await esp(500);let q=G.pz.e;if(s.met!=='adel'&&q.T==='b'&&q.B!=='b'){await pul('gir',1);await pul('gir',1);q=G.pz.e}
+          if(q[s.met==='tope'?'L':'R']!=='c'){await di('El canto verde tiene que ir contra '+(s.met==='tope'?'el tope.':'la guía.'),'Es el canto limpio y de él sale la medida. Con un canto en bruto, la pieza saldría fuera de medida.',1400);await pul('volt')}await esp(500);await empuja('Mantén pulsado para empujar')}
+        if(G.pausa){await di('Pieza pequeña: termino con el empujador.','Con menos de 250 mm entre la guía y el disco, la mano pasaría demasiado cerca de los dientes.',1600);await pul('fin','emp');await empuja('Sigue empujando')}
+        pq('Un brazo por encima del disco en marcha puede engancharse. La pieza se retira siempre por el lado del operario.');await esp(600);await pul('retirar');await esp(400);
+      }
+    }
+    await esp(800);await di('Para terminar: máquina parada y puesto limpio.','Los retales y el serrín en el suelo provocan resbalones, y quien llega después tiene que encontrar la máquina en orden.',2400);await pul('limp','si');caja.hidden=true;aviso('Demostración terminada.','bien');
+  }catch(e){if(e!=='fin')aviso('La demostración se ha detenido: '+(e&&e.message||e),'mal')}
+  finally{teclaArriba=false;caja.hidden=true;dedo.hidden=true;dedo.style.transition='';$('#app').classList.remove('demo');$('#demoStop').hidden=true;$('#demoVel').hidden=true}
+}
+$('#demoVel').onclick=e=>{VEL=VEL===1?.45:1;e.target.textContent=VEL===1?'Ir más rápido':'Ir más despacio'};
+$('#demoStop').onclick=()=>{BOARDS=BOARDS_JUEGO;G=nuevo();$('#msg').hidden=true;pinta()};
+G=nuevo();medir();pinta();requestAnimationFrame(bucle);
+</script>
