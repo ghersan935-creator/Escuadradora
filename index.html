@@ -66,9 +66,11 @@ h1{margin:0;font:700 26px/1 var(--f-disp);letter-spacing:.01em}
 #dedo.toca svg{transform:scale(.72)}
 #dedo span{background:#F2C230;color:#1C2B28;font-weight:600;font-size:14px;padding:3px 8px;margin-top:20px;max-width:230px}
 @media (prefers-reduced-motion:reduce){#dedo{transition:none}}
-#demoVel{position:absolute;right:calc(214px + env(safe-area-inset-right,0px));bottom:12px;border:1px solid var(--am);background:#172321;color:var(--am);font-weight:600;padding:8px 12px}
+#demoBar{position:absolute;right:calc(12px + env(safe-area-inset-right,0px));bottom:12px;left:12px;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;pointer-events:none}
+#demoBar button{pointer-events:auto;border:1px solid var(--am);background:#172321;color:var(--am);font-weight:600;padding:8px 12px}
+#demoBar button.on{background:#F2C230;color:#1C2B28}
 #app.demo #panel,#app.demo #lista,#app.demo #cv{pointer-events:none}
-#demoStop{position:absolute;right:calc(12px + env(safe-area-inset-right,0px));bottom:12px;border:0;background:var(--am);color:#1C2B28;font-weight:600;padding:8px 12px}
+#demoBar #demoStop{border-color:var(--am);background:var(--am);color:#1C2B28}
 #panel{grid-area:panel;background:var(--panel);border:1px solid var(--line);overflow:auto;min-height:0;padding:14px 15px 16px}
 #panel h2{margin:0 0 5px;font:600 27px/1.05 var(--f-disp);text-wrap:balance}
 .ins{margin:0 0 12px}
@@ -145,7 +147,7 @@ td.n,th.n{text-align:right}
   <header><h1>Turno en la escuadradora</h1>
     <div id="etapas"></div><div class="nota"><small>Nota PRL</small><b id="nota">10,00</b></div></header>
   <aside id="lista" aria-label="Lista de piezas"></aside>
-  <main id="maq"><canvas id="cv" aria-label="Escuadradora vista en planta y plano de corte"></canvas><div id="avisos"><div id="msg" hidden></div><div id="porque" hidden></div></div><button id="demoStop" hidden>Detener la demostración</button><button id="demoVel" hidden>Ir más rápido</button></main>
+  <main id="maq"><canvas id="cv" aria-label="Escuadradora vista en planta y plano de corte"></canvas><div id="avisos"><div id="msg" hidden></div><div id="porque" hidden></div></div><div id="demoBar" hidden><button id="demoAtras">◀ Anterior</button><button id="demoPausa">Pausa</button><button id="demoAdel">Siguiente ▶</button><button id="demoVel">Ir más rápido</button><button id="demoStop">Detener la demostración</button></div></main>
   <div id="dedo" hidden><svg viewBox="0 0 24 24"><path d="M4 2l16 11-7 1.5 4 7.5-3 1.6-4-7.6-5 5z" fill="#F2C230" stroke="#1C2B28" stroke-width="1.4"/></svg><span></span></div>
   <aside id="panel" aria-live="polite"></aside>
 </div>
@@ -190,7 +192,7 @@ const coma=(v,d=2)=>v.toFixed(d).replace('.',',');
 function falta(k){const id=k+':'+(G.fase==='corte'?G.b+'.'+G.paso:G.fase);if(G.vistos.has(id))return;G.vistos.add(id);G.inc.push(k);$('#nota').textContent=coma(nota())}
 const $=s=>document.querySelector(s);
 let tMsg;
-function aviso(t,c=''){const m=$('#msg');m.textContent=t;m.className=c;m.hidden=false;clearTimeout(tMsg);tMsg=setTimeout(()=>m.hidden=true,7000)}
+function aviso(t,c=''){const m=$('#msg');m.textContent=t;m.className=c;m.hidden=false;clearTimeout(tMsg);if(!G||!G.demo)tMsg=setTimeout(()=>m.hidden=true,7000)}
 
 /* ---------- plano de corte ---------- */
 function validar(b){
@@ -379,7 +381,7 @@ function pinta(){etapas();pintaLista();$('#nota').textContent=coma(nota());const
   if(f==='disco'){h=`<h2>Disco según el material</h2><p class="ins">En la máquina está montado el disco de 24 dientes, de la clase anterior. Vas a cortar <b>tableros</b> de DM y rechapado. ¿Cuál necesitas?</p><div class="lista">${DISCOS.map(d=>op('disco',d.id,d.t,d.s,G.disco===d.id)).join('')}</div><button class="pri" data-a="discoOK" ${G.disco?'':'disabled'}>Elegir este disco</button>`}
   if(f==='cambio'){const hechos=CAMBIO.slice(0,G.cambio).map(t=>`<li>✓ ${t}</li>`).join('');const quedan=G.orden.filter(i=>i>=G.cambio);h=`<h2>Cambia el disco</h2><p class="ins">Pulsa los pasos en el orden correcto.</p><ul class="hecho">${hechos}</ul><div class="lista">${quedan.map(i=>op('paso',i,CAMBIO[i],'',false)).join('')}</div>`}
   if(f==='puesto'){h=`<h2>Tu puesto</h2><p class="ins">¿Dónde te colocas para cortar?</p><div class="lista">${op('puesto','izq','A la izquierda del disco, junto al carro','',false)}${op('puesto','linea','Justo detrás de la línea del disco','Para ver mejor el corte',false)}</div>`}
-  if(f==='altura'){const B=BOARDS[G.b];h=`<h2>Altura para ${B.mat}</h2><p class="ins">Tablero nuevo de ${B.g} mm. Con el disco parado, ajusta la altura en el cuadro: pulsa <b>Altura</b>, escribe la medida y pulsa <b>Start</b>. El disco debe sobresalir del tablero la altura de un diente, de 10 a 15 mm.</p><svg id="lado" viewBox="0 0 340 130"></svg><div class="res" id="altv" style="margin-bottom:10px"></div>${cuadro()}<button class="pri" data-a="altOK" ${G.on?'disabled':''}>Dejar a esta altura</button>`}
+  if(f==='altura'){const B=BOARDS[G.b];h=`<h2>Altura para ${B.mat}</h2><p class="ins">Tablero nuevo de ${B.g} mm. Ajusta la altura en el cuadro: pulsa <b>Altura</b>, escribe la medida y pulsa <b>Start</b>. El disco debe sobresalir del tablero la altura de un diente, de 10 a 15 mm.</p><svg id="lado" viewBox="0 0 340 130"></svg><div class="res" id="altv" style="margin-bottom:10px"></div>${cuadro()}<button class="pri" data-a="altOK">Dejar a esta altura</button>`}
   if(f==='corte'&&G.sub==='elegir'){h=`<div class="ayu" style="margin:0 0 2px">${BOARDS[G.b].mat}</div><h2>Mesa de apoyo</h2><p class="ins">Elige la pieza que subes a la máquina. Primero saca todas las tiras y después córtalas a largo.</p><div class="solomov">${mesaHtml()}</div>`}
   else if(f==='corte'){const s=paso(),B=BOARDS[G.b],mon=G.sub==='montaje',d=mon?'':'disabled';
     const tit=s.t==='sanear'?'Sanear un canto':s.t==='testa'?'Sanear la cabeza':'Corte según tu plano';
@@ -423,7 +425,7 @@ const accion=async e=>{const b=e.target.closest('[data-a]');if(!b)return;const a
   if(a==='kc'){G.tec.buf='';pinta()}
   if(a==='kstop'){G.tec={eje:null,buf:''};pinta()}
   if(a==='kstart'){const{eje,buf}=G.tec,n=parseFloat(buf);if(!eje||isNaN(n)){aviso('Elige Altura o Guía, escribe la medida y pulsa Start.');return}
-    if(eje==='alt'){if(G.fase!=='altura'){aviso('La altura ya está ajustada para este tablero.');G.tec={eje:null,buf:''};pinta();return}if(G.on){aviso('Para el disco antes de mover la altura.','mal');return}G.alt=Math.min(Math.max(n,0),120)}
+    if(eje==='alt'){if(G.fase!=='altura'){aviso('La altura ya está ajustada para este tablero.');G.tec={eje:null,buf:''};pinta();return}G.alt=Math.min(Math.max(n,0),120)}
     else{if(G.fase!=='corte'||G.sub==='avance'||G.sub==='hecho'){aviso('Ahora no se puede mover la guía.');return}G.guia=Math.round(Math.min(Math.max(n,20),2440));if(G.pz){situar();G.fy=-220-G.pz.h}}
     G.tec={eje:null,buf:''};pinta()}
   if(a==='altOK'){const g=BOARDS[G.b].g,s=G.alt-g;if(s<10)aviso('Sobresale '+s+' mm. Demasiado bajo: roza más dientes y quema el corte.','mal');else if(s>15)aviso('Sobresale '+s+' mm. Demasiado alto: deja más disco al descubierto y astilla más la cara de abajo.','mal');else{aviso('Altura correcta: el disco sobresale la altura de un diente.','bien');G.fase='corte';colocar();pinta()}}
@@ -542,7 +544,7 @@ function bucle(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;
     if(arr&&!arr.dec&&t-arr.t>180){if(empezarAvance(arr.wx))arr.dec='feed';else{arr=null;pinta()}}
     let empuja=arr&&arr.dec==='feed';
     if(teclaArriba){if(G.sub==='avance'||empezarAvance(paso().t==='corte'&&!carroMueve()?300:-700))empuja=true;else teclaArriba=false}
-    if(empuja&&!G.pausa&&G.sub==='avance'){
+    if(empuja&&!G.pausa&&G.sub==='avance'&&!(G.demo&&DEMO&&DEMO.parada)){
       if(!G.on||G.rpm<.5){aviso('El disco se ha parado con la pieza dentro.','mal');arr=null;teclaArriba=false}
       else{const p=G.pz,s=paso(),v=Math.max(460,(p.h+390)/3.6)*(G.demo?.5:1);G.feed+=v*dt;const b=G.fy+G.feed,sup=b+p.h;
         if(s.t==='corte'&&s.met==='adel'&&G.uso==='guia'&&!G.adel&&sup>-100){arr=null;teclaArriba=false;retroceso('Retroceso. Con la guía retrasada la pieza pierde el apoyo y el disco la lanza hacia ti. Para cortar a ancho contra la guía, la guía va adelantada.')}
@@ -553,21 +555,30 @@ function bucle(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;
   }
   dibuja();requestAnimationFrame(bucle)}
 let VEL=1;
-async function demo(){
-  VEL=1;BOARDS=BOARDS_DEMO;G=nuevo();G.demo=true;G.nombre='Demostración';const g=G,dedo=$('#dedo'),et=dedo.querySelector('span');$('#app').classList.add('demo');$('#demoStop').hidden=false;$('#demoVel').hidden=false;$('#demoVel').textContent='Ir más rápido';
-  const esp=ms=>new Promise((res,rej)=>setTimeout(()=>G===g?res():rej('fin'),ms*VEL));
-  const lleva=(x,y,txt)=>{dedo.hidden=false;et.textContent=txt;const a=et.offsetWidth+34;dedo.style.transform=`translate(${Math.min(x,innerWidth-a-8)}px,${Math.max(y,0)}px)`};
+let DEMO=null;const RND=Math.random;
+async function demo(meta=0){
+  const previo=DEMO,ctl=DEMO={n:0,meta,rapido:meta>0,parada:!!(meta&&previo&&previo.parada)};
+  let sem=20261109,cuenta=0;Math.random=()=>{sem=(sem*1664525+1013904223)%4294967296;return sem/4294967296};
+  teclaArriba=false;
+  if(!meta)VEL=1;BOARDS=BOARDS_DEMO;G=nuevo();G.demo=true;G.nombre='Demostración';const g=G,dedo=$('#dedo'),et=dedo.querySelector('span');$('#app').classList.add('demo');$('#demoBar').hidden=false;if(!meta)$('#demoVel').textContent='Ir más rápido';botonPausa();
+  /* Espera interrumpible: la pausa detiene la cuenta y Siguiente o Anterior la cortan */
+  const esp=ms=>{if(G!==g)return Promise.reject('fin');if(ctl.rapido)return ++cuenta%30?Promise.resolve():new Promise(r=>setTimeout(r));
+    return new Promise((res,rej)=>{let queda=ms*VEL,ult=performance.now();const i=setInterval(()=>{if(G!==g){clearInterval(i);rej('fin');return}if(ctl.rapido){clearInterval(i);res();return}const a=performance.now();if(!ctl.parada)queda-=a-ult;ult=a;if(queda<=0){clearInterval(i);res()}},25)})};
+  /* Cada explicación es un paso. Para saltar se repite el guion sin esperas hasta llegar al paso pedido */
+  const hito=()=>{ctl.n++;if(ctl.rapido&&ctl.n>=ctl.meta){ctl.rapido=false;dedo.hidden=true;if(G.on)G.rpm=1;pinta()}};
+  const lleva=(x,y,txt)=>{if(ctl.rapido)return;dedo.hidden=false;et.textContent=txt;const a=et.offsetWidth+34;dedo.style.transform=`translate(${Math.min(x,innerWidth-a-8)}px,${Math.max(y,0)}px)`};
   const nombre=el=>{const t=el.getAttribute('aria-label')||(el.querySelector('span')?el.querySelector('span').firstChild.textContent:el.textContent);return t.trim()};
-  const señala=async(el,txt,rap)=>{el.scrollIntoView({block:'nearest'});const r=el.getBoundingClientRect();lleva(r.left+r.width/2,r.top+r.height/2,txt);el.style.outline='3px solid #F2C230';await esp(rap?550:1050)};
-  const pul=async(a,v,rap)=>{const q=a[0]==='.'?a:(v===undefined?`[data-a="${a}"]`:`[data-a="${a}"][data-v="${v}"]`);const el=document.querySelector('#panel '+q)||document.querySelector('#lista '+q);if(!el)throw new Error('no encuentro '+q);await señala(el,'Pulsa: '+nombre(el),rap);dedo.classList.add('toca');await esp(rap?200:420);dedo.classList.remove('toca');el.click();await esp(rap?200:520)};
+  const señala=async(el,txt,rap)=>{if(ctl.rapido)return;el.scrollIntoView({block:'nearest'});const r=el.getBoundingClientRect();lleva(r.left+r.width/2,r.top+r.height/2,txt);el.style.outline='3px solid #F2C230';await esp(rap?550:1050)};
+  const pul=async(a,v,rap)=>{const q=a[0]==='.'?a:(v===undefined?`[data-a="${a}"]`:`[data-a="${a}"][data-v="${v}"]`);const el=document.querySelector('#panel '+q)||document.querySelector('#lista '+q);if(!el)throw new Error('no encuentro '+q);if(ctl.rapido){el.click();await esp(0);return}await señala(el,'Pulsa: '+nombre(el),rap);dedo.classList.add('toca');await esp(rap?200:420);dedo.classList.remove('toca');el.click();await esp(rap?200:520)};
   const caja=$('#porque'),leidos=new Set();
-  const pq=t=>{caja.innerHTML='<b>Por qué</b>'+t;caja.hidden=false};
+  const pq=t=>{if(ctl.rapido)return;caja.innerHTML='<b>Por qué</b>'+t;caja.hidden=false};
   /* Lo que se hace va en el aviso; el porqué se queda a la vista durante toda la operación. La primera vez da tiempo a leerlo. */
-  const di=async(t,por,ms=2400)=>{aviso(t,'bien');let e=ms;if(por){pq(por);if(!leidos.has(por)){leidos.add(por);e=Math.max(ms,Math.min(9000,por.length*50))}}await esp(e)};
+  const di=async(t,por,ms=2400)=>{hito();if(ctl.rapido)return;aviso(t,'bien');let e=ms;if(por){pq(por);if(!leidos.has(por)){leidos.add(por);e=Math.max(ms,Math.min(9000,por.length*50))}}await esp(e)};
   const POR_CAMBIO=['Sin corriente el disco sigue girando un buen rato, y corta igual.','Si se pone en marcha por error con la mano en el disco, la lesión es gravísima.','Solo se abre con la máquina sin corriente: aquí el disco queda a la vista.','Los dientes tienen que entrar en el sentido de giro. Al revés no corta, quema la pieza y puede dar retroceso.','Una tuerca floja deja suelto el disco, y una llave olvidada sale despedida al arrancar.','El cuchillo divisor mantiene abierto el corte para que la pieza no pise el disco y salga hacia ti.','Antes de dar corriente se comprueba a mano que nada roza con el disco.','El disco no se pone en marcha sin su protección en su sitio.'];
   const tecla=async(eje,v)=>{await pul('eje',eje);for(const d of String(v))await pul('dig',d,true);await pul('kstart')};
   const enPieza=()=>{const r=cv.getBoundingClientRect(),p=G.pz;return [r.left+X(Math.max(p.x+60,-(p.w)*.5+p.x+p.w-200)),r.top+Y(G.fy+G.feed+p.h/2)]};
-  const empuja=async txt=>{const[wx]=[paso().t==='corte'&&G.uso==='guia'&&G.pz.x+G.pz.w>120?G.pz.x+G.pz.w-40:G.pz.x+40];const sigue=()=>{const r=cv.getBoundingClientRect();lleva(r.left+X(wx),r.top+Y(G.fy+G.feed+G.pz.h/2),txt)};sigue();await esp(1000);teclaArriba=true;dedo.style.transition='none';let n=0;while(G.sub!=='hecho'&&!G.pausa&&teclaArriba){sigue();await esp(60/VEL*VEL);if(++n>900)throw new Error('el avance no termina')}dedo.style.transition=''};
+  const remata=()=>{if(G.sub==='hecho'||G.pausa)return;if(G.sub==='montaje')G.sub='avance';G.rpm=G.on?1:0;const s=paso();if(s.t==='corte'&&G.uso==='guia'&&s.m<=250&&!G.yaPauso){G.yaPauso=true;G.pausa=true;G.feed=-269-G.fy;pinta();return}terminarCorte()};
+  const empuja=async txt=>{if(ctl.rapido){remata();return}const[wx]=[paso().t==='corte'&&G.uso==='guia'&&G.pz.x+G.pz.w>120?G.pz.x+G.pz.w-40:G.pz.x+40];const sigue=()=>{const r=cv.getBoundingClientRect();lleva(r.left+X(wx),r.top+Y(G.fy+G.feed+G.pz.h/2),txt)};sigue();await esp(1000);teclaArriba=true;dedo.style.transition='none';let n=0;while(G.sub!=='hecho'&&!G.pausa&&teclaArriba&&!ctl.rapido){sigue();await esp(60);if(!ctl.parada&&++n>900)throw new Error('el avance no termina')}dedo.style.transition='';if(ctl.rapido){teclaArriba=false;arr=null;remata()}};
   try{
     lleva(innerWidth/2,innerHeight/2,'Empieza la demostración');
     G.fase='plano';G.bi=0;pinta();await di('Primero se dibuja el plano de corte de cada tablero.','El plano decide el orden de los cortes y cuánto se aprovecha el tablero. Cada corte tiene que ir de lado a lado, porque la escuadradora no se para a mitad de tablero.',2600);
@@ -577,12 +588,11 @@ async function demo(){
     await di('Antes de la máquina: equipos de protección. Sin guantes.','Gafas por lo que salta el disco, protectores por el ruido y calzado por si cae un tablero. La ropa suelta y los guantes pueden engancharse en el disco y arrastrar la mano.');
     for(const e of EPIS)if(e.ok)await pul('epi',e.id,true);await pul('epiOK');await esp(900);
     await di('Vamos a cortar tableros: disco de 80 dientes.','Cuantos más dientes, más limpio sale el corte en tablero y rechapado. El de 24 dientes es para madera maciza al hilo y aquí astillaría los cantos.');await pul('disco','c');await pul('discoOK');await esp(700);
-    for(let i=0;i<CAMBIO.length;i++){pq(POR_CAMBIO[i]);await pul('paso',i);await esp(1500)}await esp(700);
+    for(let i=0;i<CAMBIO.length;i++){hito();pq(POR_CAMBIO[i]);await pul('paso',i);await esp(1500)}await esp(700);
     await di('Me coloco a un lado de la línea del disco.','Si hay retroceso, la pieza sale disparada en la línea del disco. Fuera de ella no me alcanza.',2200);await pul('puesto','izq');await esp(900);
     for(let b=0;b<BOARDS.length;b++){
-      if(G.on){await pul('.br');await esp(600)}
-      await di(`${BOARDS[b].mat}: el disco debe sobresalir de 10 a 15 mm.`,'Con menos altura no limpia bien el corte; con más, queda más disco al descubierto. Se ajusta siempre con el disco parado.');await tecla('alt',BOARDS[b].g+12);await pul('altOK');await esp(500);
-      await di('Protector bajado y aspiración conectada, antes de arrancar.','El protector cubre el disco y frena lo que salta. La aspiración se lleva el polvo, que en el DM es muy fino y dañino.',2000);await pul('prot');if(!G.asp)await pul('asp');await pul('marcha');await di('Espero a que el disco coja todas sus vueltas.','Si la pieza entra antes de tiempo, el disco se frena y el corte sale mal.',1600);
+      await di(`${BOARDS[b].mat}: el disco debe sobresalir de 10 a 15 mm.`,'Con menos altura no limpia bien el corte; con más, queda más disco al descubierto.');await tecla('alt',BOARDS[b].g+12);await pul('altOK');await esp(500);
+      await di('Protector bajado y aspiración conectada, antes de arrancar.','El protector cubre el disco y frena lo que salta. La aspiración se lleva el polvo, que en el DM es muy fino y dañino.',2000);await pul('prot');if(!G.asp)await pul('asp');if(!G.on){await pul('marcha');await di('Espero a que el disco coja todas sus vueltas.','Si la pieza entra antes de tiempo, el disco se frena y el corte sale mal.',1600)}
       while(G.fase==='corte'&&G.b===b){
         if(G.sub==='elegir'){const t=G.mesa.find(m=>esTira(opDe(m)))||G.mesa[0];await di(esTira(opDe(t))?'Primero, todas las tiras.':'Ahora, las piezas a largo.',esTira(opDe(t))?'Las tiras salen mientras el tablero sigue grande y estable contra la guía. Después se cortan todas a largo seguidas, sin cambiar la preparación a mitad.':'Cada tira se pone atravesada, con un canto limpio contra la regla, y se corta a su medida.',1800);await pul('coge',t.id)}
         const s=paso();await esp(600);
@@ -600,9 +610,13 @@ async function demo(){
     }
     await esp(800);await di('Para terminar: máquina parada y puesto limpio.','Los retales y el serrín en el suelo provocan resbalones, y quien llega después tiene que encontrar la máquina en orden.',2400);await pul('limp','si');caja.hidden=true;aviso('Demostración terminada.','bien');
   }catch(e){if(e!=='fin')aviso('La demostración se ha detenido: '+(e&&e.message||e),'mal')}
-  finally{teclaArriba=false;caja.hidden=true;dedo.hidden=true;dedo.style.transition='';$('#app').classList.remove('demo');$('#demoStop').hidden=true;$('#demoVel').hidden=true}
+  finally{if(G!==g&&G.demo)return;teclaArriba=false;caja.hidden=true;dedo.hidden=true;dedo.style.transition='';$('#app').classList.remove('demo');$('#demoBar').hidden=true;Math.random=RND;DEMO=null}
 }
+function botonPausa(){const b=$('#demoPausa'),p=DEMO&&DEMO.parada;b.textContent=p?'Seguir':'Pausa';b.classList.toggle('on',!!p);b.setAttribute('aria-pressed',p?'true':'false')}
+$('#demoPausa').onclick=()=>{if(DEMO){DEMO.parada=!DEMO.parada;botonPausa()}};
+$('#demoAtras').onclick=()=>{if(DEMO&&!DEMO.rapido)demo(Math.max(1,DEMO.n-1))};
+$('#demoAdel').onclick=()=>{if(DEMO&&!DEMO.rapido){DEMO.meta=DEMO.n+1;DEMO.rapido=true}};
 $('#demoVel').onclick=e=>{VEL=VEL===1?.45:1;e.target.textContent=VEL===1?'Ir más rápido':'Ir más despacio'};
-$('#demoStop').onclick=()=>{BOARDS=BOARDS_JUEGO;G=nuevo();$('#msg').hidden=true;pinta()};
+$('#demoStop').onclick=()=>{Math.random=RND;BOARDS=BOARDS_JUEGO;G=nuevo();$('#msg').hidden=true;pinta()};
 G=nuevo();medir();pinta();requestAnimationFrame(bucle);
 </script>
