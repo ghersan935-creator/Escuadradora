@@ -314,10 +314,12 @@ const areaP=b=>G.planes[b].reduce((a,p)=>a+p.w*p.h,0);
 const aprov=()=>BOARDS.reduce((a,_,b)=>a+areaP(b),0)/(G.tableros*W0*H0)*100;
 function pad(n){return String(n).padStart(2,'0')}
 const VECES={};function cuentaIntento(n){const k='intentos-escuadradora:'+n.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/\s+/g,' ').trim();let v=VECES[k]||0;try{v=Math.max(v,+localStorage.getItem(k)||0)}catch(e){}v++;VECES[k]=v;try{localStorage.setItem(k,v)}catch(e){}return v}
+const HIST={};function historial(n,rec){const k='historial-escuadradora:'+n.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/\s+/g,' ').trim();let L=HIST[k]||[];try{const g=JSON.parse(localStorage.getItem(k)||'[]');if(Array.isArray(g)&&g.length>=L.length)L=g}catch(e){}L=L.filter(r=>r.v!==rec.v);L.push(rec);L.sort((a,b)=>a.v-b.v);HIST[k]=L;try{localStorage.setItem(k,JSON.stringify(L))}catch(e){}return L}
 async function emitir(){if(G.demo)return;const d=new Date(),f=`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}`;
   const mins=Math.max(1,Math.round((Date.now()-G.t0)/60000));G.mins=mins;
   const datos=`${Math.round(nota()*100)}-${Math.round(aprov()*10)}-${G.tableros}-${G.vez}-${mins}-${f}`;
   const cod=datos+'-'+await firma(G.nombre,datos);
+  G.hist=historial(G.nombre,{v:G.vez,n:nota(),m:mins,f:`${pad(d.getDate())}/${pad(d.getMonth()+1)}`});
   const cv2=lienzoCert(d,cod,mins);
   G.cert={cod,img:cv2.toDataURL('image/jpeg',.9),fecha:`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}h`};pinta()}
 function lienzoCert(d,cod,mins){const C=document.createElement('canvas');C.width=1684;C.height=1190;const x=C.getContext('2d');
@@ -333,6 +335,7 @@ function lienzoCert(d,cod,mins){const C=document.createElement('canvas');C.width
   t('Incidencias de PRL',50,720,'600 28px Barlow,Arial,sans-serif');
   if(G.inc.length)G.inc.forEach((k,i)=>{t(INC[k][0],50,762+i*34,'500 24px Barlow,Arial,sans-serif');t('−0,25',760,762+i*34,'600 24px "IBM Plex Mono",monospace','#BE2A17','right')});
   else t('Ninguna',50,762,'500 24px Barlow,Arial,sans-serif');
+  {const L=G.hist||[],V=L.slice(-8),ix=860,B='Barlow,Arial,sans-serif',N='"IBM Plex Mono",monospace';t('Intentos terminados en este navegador',ix,720,'600 28px '+B);[['Intento',70],['Fecha',220],['Nota',360],['Tiempo',540]].forEach(h=>t(h[0],ix+h[1],756,'600 21px '+B,'#55615B','right'));V.forEach((r,i)=>{const y=792+i*32,ac=r.v===G.vez,f=(ac?'700 ':'500 ')+'23px '+B,fn=(ac?'700 ':'600 ')+'23px '+N;t(String(r.v),ix+70,y,f,'#17201C','right');t(r.f,ix+220,y,f,'#17201C','right');t(coma(r.n),ix+360,y,fn,'#17201C','right');t(r.m+' min',ix+540,y,f,'#17201C','right')});if(L.length>8)t(`Se muestran los 8 últimos de ${L.length}`,ix,1056,'500 21px '+B,'#55615B')}
   t('Código de comprobación',50,1110,'500 22px Barlow,Arial,sans-serif','#55615B');t(cod,50,1150,'600 34px "IBM Plex Mono",monospace');
   return C}
 function pdfDesde(jpegDataUrl){
