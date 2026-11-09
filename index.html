@@ -145,7 +145,7 @@ td.n,th.n{text-align:right}
 </style>
 <div id="app">
   <header><h1>Turno en la escuadradora</h1>
-    <div id="etapas"></div><div class="nota"><small>Nota PRL</small><b id="nota">10,00</b></div></header>
+    <div id="etapas"></div><div class="nota"><small>Nota</small><b id="nota">10,00</b></div></header>
   <aside id="lista" aria-label="Lista de piezas"></aside>
   <main id="maq"><canvas id="cv" aria-label="Escuadradora vista en planta y plano de corte"></canvas><div id="avisos"><div id="msg" hidden></div><div id="porque" hidden></div></div><div id="demoBar" hidden><button id="demoAtras">◀ Anterior</button><button id="demoPausa">Pausa</button><button id="demoAdel">Siguiente ▶</button><button id="demoVel">Ir más rápido</button><button id="demoStop">Detener la demostración</button></div></main>
   <div id="dedo" hidden><svg viewBox="0 0 24 24"><path d="M4 2l16 11-7 1.5 4 7.5-3 1.6-4-7.6-5 5z" fill="#F2C230" stroke="#1C2B28" stroke-width="1.4"/></svg><span></span></div>
@@ -185,14 +185,15 @@ const dlP=(window.claude&&claude.use)?claude.use('downloads'):Promise.resolve(nu
 /* ---------- estado ---------- */
 let G;
 function piezasDe(b){const o=[];BOARDS[b].p.forEach((p,i)=>{for(let k=0;k<p[1];k++)o.push({id:b+'-'+i+'-'+k,n:p[0],l:p[2],w:p[2],h:p[3],x:0,y:0,on:false})});return o}
-function nuevo(){return {fase:'inicio',nombre:'',bi:0,planes:BOARDS.map((_,i)=>piezasDe(i)),sel:null,cortes:[],hechas:new Set(),mesa:[],map:new Map(),trozo:null,op:null,nid:0,epi:new Set(),disco:null,cambio:0,orden:CAMBIO.map((_,i)=>i).sort(()=>Math.random()-.5),alt:60,puesto:null,
+function nuevo(){return {err:0,ultMal:'',tMal:0,fase:'inicio',nombre:'',bi:0,planes:BOARDS.map((_,i)=>piezasDe(i)),sel:null,cortes:[],hechas:new Set(),mesa:[],map:new Map(),trozo:null,op:null,nid:0,epi:new Set(),disco:null,cambio:0,orden:CAMBIO.map((_,i)=>i).sort(()=>Math.random()-.5),alt:60,puesto:null,
   b:0,paso:0,sub:'montaje',on:false,rpm:0,prot:false,asp:false,vista:'maquina',tec:{eje:null,buf:''},guia:620,adel:false,tope:400,uso:'tope',feed:0,fy:-1000,pz:null,recorte:null,inc:[],vistos:new Set(),tableros:3,pausa:false,empu:false,yaPauso:false,cert:null,t0:Date.now(),prof:null}}
-function nota(){let n=10,g=0,mg=false;G.inc.forEach(k=>{const c=INC[k];n-=c[1];if(c[2]==='g')g++;if(c[2]==='mg')mg=true});if(mg||g>=3)n=0;return Math.max(0,n)}
+function nota(){return Math.max(0,10-.25*G.err)}
 const coma=(v,d=2)=>v.toFixed(d).replace('.',',');
-function falta(k){const id=k+':'+(G.fase==='corte'?G.b+'.'+G.paso:G.fase);if(G.vistos.has(id))return;G.vistos.add(id);G.inc.push(k);$('#nota').textContent=coma(nota())}
+function falta(k){const id=k+':'+(G.fase==='corte'?G.b+'.'+G.paso:G.fase);if(G.vistos.has(id))return;G.vistos.add(id);G.inc.push(k)}
 const $=s=>document.querySelector(s);
 let tMsg;
-function aviso(t,c=''){const m=$('#msg');m.textContent=t;m.className=c;m.hidden=false;clearTimeout(tMsg);if(!G||!G.demo)tMsg=setTimeout(()=>m.hidden=true,7000)}
+/* Cada error resta 0,25, sea del tipo que sea. Un mismo aviso repetido sin pausa cuenta una sola vez */
+function aviso(t,c=''){if(c==='mal'&&G&&!G.demo&&G.fase!=='inicio'&&G.fase!=='fin'){const a=performance.now();if(t!==G.ultMal||a-G.tMal>1200){G.err++;const n=$('#nota');if(n)n.textContent=coma(nota())}G.ultMal=t;G.tMal=a}const m=$('#msg');m.textContent=t;m.className=c;m.hidden=false;clearTimeout(tMsg);if(!G||!G.demo)tMsg=setTimeout(()=>m.hidden=true,7000)}
 
 /* ---------- plano de corte ---------- */
 function validar(b){
@@ -274,10 +275,10 @@ function revisar(){const s=paso();
   return null}
 function empezarAvance(wx){
   if(G.fase!=='corte'||G.pausa||G.sub==='hecho')return false;
-  if(!G.on){aviso('La máquina está parada. Pulsa MARCHA.');return false}
-  if(G.rpm<.9){aviso('Espera a que el disco coja todas sus vueltas.');return false}
+  if(!G.on){aviso('La máquina está parada. Pulsa MARCHA.','mal');return false}
+  if(G.rpm<.9){aviso('Espera a que el disco coja todas sus vueltas.','mal');return false}
   if(!G.prot){falta('resg');aviso('El protector tiene que estar bajado hasta casi tocar la pieza. Se descuenta y no se corta.','mal');pinta();return false}
-  if(!G.asp){aviso('Conecta la aspiración antes de cortar.');return false}
+  if(!G.asp){aviso('Conecta la aspiración antes de cortar.','mal');return false}
   if(Math.abs(wx)<70){falta('manos');aviso('Esa mano está en la línea del disco. Agarra lejos de ella.','mal');pinta();return false}
   if(G.sub==='montaje'){const r=revisar();if(r){aviso(r,'mal');return false}G.sub='avance'}
   return true}
@@ -326,10 +327,10 @@ function lienzoCert(d,cod,mins){const C=document.createElement('canvas');C.width
   t(G.nombre,50,190,'600 46px Barlow,Arial,sans-serif');
   t(`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} · ${pad(d.getHours())}:${pad(d.getMinutes())}h · ${mins} min de juego`,50,232,'500 24px Barlow,Arial,sans-serif','#55615B');
   const dato=(a,et,val)=>{t(et,a,290,'500 22px Barlow,Arial,sans-serif','#55615B');t(val,a,340,'600 44px "IBM Plex Mono",monospace')};
-  dato(50,'Nota PRL',coma(nota()));dato(330,'Tableros usados',String(G.tableros));dato(640,'Aprovechamiento',coma(aprov(),1)+' %');
+  dato(50,'Nota',coma(nota()));dato(960,'Errores',String(G.err));dato(330,'Tableros usados',String(G.tableros));dato(640,'Aprovechamiento',coma(aprov(),1)+' %');
   BOARDS.forEach((B,b)=>{const ox=50+b*535,oy=400,s=500/W0,h=H0*s;t('Plano · '+B.mat+' · '+coma(areaP(b)/(W0*H0)*100,1)+' %',ox,oy-10,'600 24px Barlow,Arial,sans-serif');x.fillStyle='#EDE3D2';x.fillRect(ox,oy,500,h);x.strokeStyle='#333';x.lineWidth=1.5;x.strokeRect(ox,oy,500,h);G.planes[b].forEach(p=>{const X0=ox+p.x*s,Y0=oy+h-(p.y+p.h)*s;x.fillStyle='#BC986C';x.fillRect(X0,Y0,p.w*s,p.h*s);x.strokeStyle='#5E4426';x.strokeRect(X0,Y0,p.w*s,p.h*s);x.fillStyle='#17201C';x.font='500 15px Barlow,Arial,sans-serif';x.textAlign='center';x.fillText(p.n,X0+p.w*s/2,Y0+p.h*s/2+5)})});
   t('Incidencias de PRL',50,720,'600 28px Barlow,Arial,sans-serif');
-  if(G.inc.length)G.inc.forEach((k,i)=>{t(INC[k][0],50,762+i*34,'500 24px Barlow,Arial,sans-serif');t(INC[k][2]==='mg'?'muy grave':'−'+coma(INC[k][1]),760,762+i*34,'600 24px "IBM Plex Mono",monospace','#BE2A17','right')});
+  if(G.inc.length)G.inc.forEach((k,i)=>{t(INC[k][0],50,762+i*34,'500 24px Barlow,Arial,sans-serif');t('−0,25',760,762+i*34,'600 24px "IBM Plex Mono",monospace','#BE2A17','right')});
   else t('Ninguna',50,762,'500 24px Barlow,Arial,sans-serif');
   t('Código de comprobación',50,1110,'500 22px Barlow,Arial,sans-serif','#55615B');t(cod,50,1150,'600 34px "IBM Plex Mono",monospace');
   return C}
@@ -396,7 +397,7 @@ function pinta(){etapas();pintaLista();$('#nota').textContent=coma(nota());const
     <button class="pri" style="margin-top:0" data-a="retirar" ${G.sub==='hecho'?'':'disabled'}>Retirar la pieza</button>`;
   }
   if(f==='limpieza'){h=`<h2>Fin del trabajo</h2><p class="ins">Todas las piezas están cortadas. ¿Qué haces con el puesto?</p><div class="lista">${op('limp','si','Parar la máquina, recoger retales, limpiar con cepillo y dejarla desconectada','',false)}${op('limp','no','Dejarlo como está para el siguiente','',false)}</div>`}
-  if(f==='fin'){const n=nota();h=`<h2>Juego completado</h2><p class="ins"><b>${G.nombre}</b></p><p class="ins">Nota PRL: <b>${coma(n)}</b>${n===0?' (una incidencia muy grave o tres graves dejan la nota en 0)':''} · Tableros usados: <b>${G.tableros}</b> · Aprovechamiento: <b>${coma(aprov(),1)} %</b></p>${G.inc.length?`<ul class="inc">${G.inc.map(k=>`<li><span>${INC[k][0]}</span><b>${INC[k][2]==='mg'?'muy grave':'−'+coma(INC[k][1])}</b></li>`).join('')}</ul>`:''}${G.cert?`<img class="cert" src="${G.cert.img}" alt="Certificado de ${G.nombre}"><span class="cod">${G.cert.cod}</span><button class="pri" data-a="desc">Descargar certificado (PDF)</button><p class="ayu">Súbelo a la tarea de Classroom. Si no se descarga, haz una captura de esta pantalla.</p>`:(G.demo?'<p class="ayu">Las demostraciones no generan certificado. Para obtenerlo hay que jugar el turno.</p>':'<p class="ayu">Preparando el certificado…</p>')}<button class="sec" data-a="otra">Volver a empezar</button>`}
+  if(f==='fin'){const n=nota();h=`<h2>Juego completado</h2><p class="ins"><b>${G.nombre}</b></p><p class="ins">Nota: <b>${coma(n)}</b> · Errores: <b>${G.err}</b> · Tableros usados: <b>${G.tableros}</b> · Aprovechamiento: <b>${coma(aprov(),1)} %</b></p>${G.inc.length?`<ul class="inc">${G.inc.map(k=>`<li><span>${INC[k][0]}</span><b>${'−0,25'}</b></li>`).join('')}</ul>`:''}${G.cert?`<img class="cert" src="${G.cert.img}" alt="Certificado de ${G.nombre}"><span class="cod">${G.cert.cod}</span><button class="pri" data-a="desc">Descargar certificado (PDF)</button><p class="ayu">Súbelo a la tarea de Classroom. Si no se descarga, haz una captura de esta pantalla.</p>`:(G.demo?'<p class="ayu">Las demostraciones no generan certificado. Para obtenerlo hay que jugar el turno.</p>':'<p class="ayu">Preparando el certificado…</p>')}<button class="sec" data-a="otra">Volver a empezar</button>`}
   $('#panel').innerHTML=h;
   if(f==='altura')pintaLado();
   const med=$('#med');if(med)med.onchange=e=>ponMed(+e.target.value);
@@ -418,7 +419,7 @@ const accion=async e=>{const b=e.target.closest('[data-a]');if(!b)return;const a
   if(a==='epiOK'){const mal=EPIS.filter(x=>!!x.ok!==G.epi.has(x.id));if(mal.length){falta('epi');const gu=mal.some(x=>x.id==='guantes');G.epi=new Set(EPIS.filter(x=>x.ok).map(x=>x.id));aviso(gu?'Prohibido trabajar con guantes: se pueden enganchar en el disco y arrastrar la mano.':'Falta un equipo obligatorio: '+mal.map(x=>x.t.toLowerCase()).join(', ')+'. Se descuenta y te lo pones.','mal')}else aviso('Bien equipado.','bien');G.fase='disco';pinta()}
   if(a==='disco'){G.disco=v;pinta()}
   if(a==='discoOK'){if(G.disco==='c'){aviso('Correcto: para tablero, disco de muchos dientes.','bien');G.fase='cambio'}else aviso(G.disco==='a'?'Ese es el que está montado y sirve para maciza al hilo. En DM deja mal corte.':'Ese es para tronzar maciza. Busca el pensado para tableros.','mal');pinta()}
-  if(a==='paso'){const i=+v;if(i===G.cambio){G.cambio++;if(G.cambio===CAMBIO.length){aviso('Disco cambiado y comprobado.','bien');G.fase='puesto'}}else if(G.cambio<2&&i>=2){falta('conectada');aviso('Nunca toques el disco con la máquina conectada. Es una falta muy grave: la nota de PRL se queda en 0.','mal')}else aviso('Todavía no: falta un paso antes de ese.','mal');pinta()}
+  if(a==='paso'){const i=+v;if(i===G.cambio){G.cambio++;if(G.cambio===CAMBIO.length){aviso('Disco cambiado y comprobado.','bien');G.fase='puesto'}}else if(G.cambio<2&&i>=2){falta('conectada');aviso('Nunca toques el disco con la máquina conectada. Se descuenta.','mal')}else aviso('Todavía no: falta un paso antes de ese.','mal');pinta()}
   if(a==='puesto'){G.puesto=v;if(v==='izq'){aviso('Bien. Nunca en la línea de corte.','bien');empiezaTablero(0)}else aviso('En la línea de corte, un recorte puede salir despedido hacia ti. Colócate a la izquierda, junto al carro.','mal')}
   if(a==='eje'){G.tec={eje:v,buf:''};pinta()}
   if(a==='dig'){if(!G.tec.eje){aviso('Elige primero Altura o Guía.');return}if(G.tec.buf.length<6)G.tec.buf+=v;pinta()}
