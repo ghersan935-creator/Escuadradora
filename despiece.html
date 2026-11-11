@@ -350,6 +350,8 @@ function zoom(f,px,py){const v=G.vb?[...G.vb]:[0,0,PH,PV];const nw=Math.min(PH,v
 
 /* ---------- ayuda gráfica: señala en el plano de dónde se parte, qué se descuenta y qué se suma ---------- */
 const COLA={obj:'#1B5AA0',base:'#17201C',men:'#C62F1B',mas:'#1E7B45',lee:'#1B5AA0',nota:'#55615B'},PREA={obj:'Buscas: ',base:'Parte de: ',men:'− ',mas:'+ ',lee:'Se lee en el plano: ',nota:''};
+/* cada cosa que se descuenta o se suma lleva su propio color, en la etiqueta y en el plano */
+const PALA=['#C62F1B','#1E7B45','#8E24AA','#B85C00','#00838F','#AD1457','#6D4C41'];
 const I_=(k,t,...g)=>({k,t,g});
 const AY={
  'lar:L':[0,(c,g,v)=>{const yD=c.P+c.H-c.G-c.hc,yP=c.P+c.G+c.j,xm=v.X(c.G+c.j+g.wp/2);return {col:[v.ax-118,'end',v.top+12],it:[
@@ -434,8 +436,8 @@ const AY={
    if(c.dv)it.push(I_('men','la división vertical',['r',v.X(c.A/2-c.G/2),v.Y(y0),v.k*c.G,v.k*g.hp]),I_('nota','Se reparte entre los 2 huecos'));return {col:[v.X(c.G)+50,'start',v.Y(y0)+70],it}}],
 };
 {AY['bal:A']=[2,(c,g,v)=>AY['dvi:A'][1](c,g,v,true)];const al=(a,b,x)=>AY[a]=x?[AY[b][0],(c,g,v)=>AY[b][1](c,g,v,true)]:AY[b];al('tpu:A','lar:A');al('tpu:Gr','lar:Gr');al('pat:Gr','pat:A');al('tco:A','tla:A');al('tco:Gr','tla:Gr');al('tec:A','cos:A');al('div:L','tec:L',1);al('fon:L','lat:L',1)}
-function ayudaSvg(){const a=G.ay;if(!a||a.lam!==G.lam||G.fase!=='medidas')return '';const sp=AY[a.key][1](G.cot,geo(),VT);let o='',cajas='';
-  sp.it.forEach((it,i)=>{const col=COLA[it.k],txt=PREA[it.k]+it.t,w=txt.length*12.2+22,ty=Math.min(1118,Math.max(64,sp.col[2]+i*42)),x0=Math.min(1584-w,Math.max(114,sp.col[1]==='end'?sp.col[0]-w:sp.col[0])),px=sp.col[1]==='end'?x0+w:x0;
+function ayudaSvg(){const a=G.ay;if(!a||a.lam!==G.lam||G.fase!=='medidas')return '';const sp=AY[a.key][1](G.cot,geo(),VT);let o='',cajas='',nc=0;
+  sp.it.forEach((it,i)=>{const col=it.k==='men'||it.k==='mas'?PALA[nc++%PALA.length]:COLA[it.k],txt=PREA[it.k]+it.t,w=txt.length*12.2+22,ty=Math.min(1118,Math.max(64,sp.col[2]+i*42)),x0=Math.min(1584-w,Math.max(114,sp.col[1]==='end'?sp.col[0]-w:sp.col[0])),px=sp.col[1]==='end'?x0+w:x0;
    for(const q of it.g){let cx,cy;
     if(q[0]==='r'){const w2=Math.max(q[3],5),h2=Math.max(q[4],5);o+=`<rect x="${q[1]-(w2-q[3])/2}" y="${q[2]-(h2-q[4])/2}" width="${w2}" height="${h2}" fill="${col}" fill-opacity=".3" stroke="${col}" stroke-width="2.5"/>`;cx=q[1]+q[3]/2;cy=q[2]+q[4]/2}
     else if(q[0]==='s'){const[,x1,y1,x2,y2]=q,d=Math.hypot(x2-x1,y2-y1)||1,nx=-(y2-y1)/d*10,ny=(x2-x1)/d*10;o+=`<path d="M${x1} ${y1}L${x2} ${y2}M${x1+nx} ${y1+ny}L${x1-nx} ${y1-ny}M${x2+nx} ${y2+ny}L${x2-nx} ${y2-ny}" stroke="${col}" stroke-width="${it.k==='obj'?7:5}" fill="none"${it.k==='obj'?' stroke-dasharray="16 7"':''}/>`;cx=(x1+x2)/2;cy=(y1+y2)/2}
@@ -498,7 +500,7 @@ function ayBoton(){const b=$('#btnAyuda'),q=$('#btnAyNo'),t=$('#ayTxt');if(!b)re
 function ayuda(){const id=G.celAct;if(!id)return;const[l,c]=id.split(':');if(G.med[l]&&G.med[l][c])return;const x=l==='esc'?null:linea(l),f=x&&x.swap&&c!=='Gr'?(c==='L'?'A':'L'):c,key=l+':'+f;if(!AY[key])return;
   if(!G.ayU[id]){G.ayU[id]=1;G.ayudas++;$('#nota').textContent=coma(nota())}
   G.ay={id,key,lam:AY[key][0]};G.lam=G.ay.lam;G.vb=null;replano();ayBoton();
-  aviso(`Ayuda gráfica · ${nomCel(id)}. Está señalado en la lámina ${G.ay.lam+1}: en azul, la medida que buscas; en negro, de dónde partes; en rojo, lo que se descuenta; en verde, lo que se suma. Los valores los lees tú en los planos.`,'');const el=$('#c-'+l+'-'+c);if(el)el.focus()}
+  aviso(`Ayuda gráfica · ${nomCel(id)}. Está señalado en la lámina ${G.ay.lam+1}: en azul, la medida que buscas; en negro, de dónde partes. Cada etiqueta tiene el mismo color que lo que señala: las que empiezan por − se descuentan y las que empiezan por + se suman. Los valores los lees tú en los planos.`,'');const el=$('#c-'+l+'-'+c);if(el)el.focus()}
 function aviso(t,c){const m=$('#aviso');if(m){m.textContent=t;m.className='msg '+(c||'');m.hidden=false}}
 function valida(el){if(el.readOnly||!el.value.trim()||el.dataset.ult===el.value)return;el.dataset.ult=el.value;const[l,c]=el.dataset.m.split(':'),v=parseFloat(el.value.trim().replace(',','.')),nom=l==='esc'?ESC.n:linea(l).n,cam=c==='L'?'largo':c==='A'?'ancho':'grueso';
   if(isNaN(v)){aviso('Escribe solo el número, en mm.','mal');return}
