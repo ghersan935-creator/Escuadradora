@@ -150,7 +150,7 @@ tr.resal td:first-child,tr.resal td:nth-child(2){color:var(--am)}
 }
 </style>
 <div id="app">
-  <header><h1>Del plano al corte</h1><div id="etapas"></div><div class="nota">Nota <b id="nota">10,00</b></div></header>
+  <header><h1>Del plano al corte<small style="display:block;font:500 12px/1.2 Barlow,Arial,sans-serif;letter-spacing:0;opacity:.8;margin-top:3px">Autor: Gustavo Hernández Sánchez · IES Virgen de la Esperanza</small></h1><div id="etapas"></div><div class="nota">Nota <b id="nota">10,00</b></div></header>
   <section id="plano"><div id="tabs"></div><div id="hoja"></div><div id="tresd" hidden></div><div id="cwrap" hidden><div id="cmaq"><canvas id="cvc" aria-label="Escuadradora vista desde arriba"></canvas><div id="cmsg" hidden></div><div id="csobre"></div></div><div id="mesac"></div></div></section>
   <section id="der"></section><input type="file" id="fpar" accept=".txt,text/plain" hidden>
 </div>
@@ -271,7 +271,7 @@ function marco(n,comp,E,cuerpo){let o=`<defs><pattern id="vh" patternUnits="user
   o+=tx(X0+18,Y1-16,G.nombre?`Planos de ${G.nombre.replace(/&/g,'&amp;').replace(/</g,'&lt;')} · intento ${G.vez} · medidas diferentes en cada intento`:'Planos de muestra · las medidas cambian en cada alumno e intento',23,'start',0,700);
   /* cajetín: render a la izquierda, logo grande en su recuadro y sin casilla de alumno */
   const cx=1200,cy=962,cw=X1-cx,ch=Y1-cy;o+=f_(cx,cy,cw,ch)+r_(cx,cy,cw,ch,'stroke-width="2.6"');o+=ln(cx,cy+40,X1,cy+40,1.5)+ln(cx,cy+74,X1,cy+74,1.5)+ln(cx,cy+108,X1,cy+108,1.5)+ln(cx+170,cy,cx+170,cy+40,1.5);
-  const lab=(x,y,t)=>tx(x,y,t,13,'start');lab(cx+6,cy+13,'Curso');lab(cx+176,cy+13,'N.º Plano');o+=lab(cx+6,cy+13,'Curso')+lab(cx+176,cy+13,'N.º Plano')+tx(cx+85,cy+35,'1.º GS',22)+tx(cx+280,cy+35,`${n}/5`,22);o+=lab(cx+6,cy+53,'Proyecto')+tx(cx+200,cy+68,'Aparador Duna',24)+lab(cx+6,cy+87,'Componente')+tx(cx+200,cy+102,comp,24);
+  const lab=(x,y,t)=>tx(x,y,t,13,'start');lab(cx+6,cy+13,'Curso');lab(cx+176,cy+13,'N.º Plano');o+=lab(cx+6,cy+13,'Curso')+lab(cx+176,cy+13,'N.º Plano')+tx(cx+85,cy+35,'1.º GS',22)+tx(cx+280,cy+35,`${n}/5`,22);o+=ln(cx+170,cy+40,cx+170,cy+74,1.5)+lab(cx+6,cy+53,'Proyecto')+tx(cx+92,cy+69,'Aparador Duna',17)+lab(cx+176,cy+53,'Autor')+tx(cx+283,cy+70,'Gustavo Hernández Sánchez',14.5)+lab(cx+6,cy+87,'Componente')+tx(cx+200,cy+102,comp,24);
   const by=cy+108,bh=ch-108;o+=iso('general',cx+6,by+4,104,bh-8)+ln(cx+116,by,cx+116,Y1,1.5);const lw=Math.round((bh-8)*210/176);o+=`<image href="data:image/jpeg;base64,${IMG.logo}" x="${cx+124}" y="${by+4}" width="${lw}" height="${bh-8}" preserveAspectRatio="xMidYMid meet"/>`;o+=ln(cx+132+lw,by,cx+132+lw,Y1,1.5)+tx(cx+142+lw,by+34,'I.E.S Virgen',20,'start')+tx(cx+142+lw,by+60,'de la Esperanza',18,'start');
   return `<svg viewBox="${G.vb?G.vb.join(' '):`0 0 ${PH} ${PV}`}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Plano ${n} de 5: ${comp}">${o}${cuerpo}${ayudaSvg()}</svg>`}
 /* Respaldo visto en planta: entra en el canelador de cada costado, 1 mm menos que su profundidad */
@@ -603,7 +603,7 @@ function lienzo(d,cod,mins,im){const C=document.createElement('canvas');C.width=
   const t=(s,a,b,f,col='#17201C',al='left')=>{x.fillStyle=col;x.font=f;x.textAlign=al;x.fillText(s,a,b)},B='Barlow,Arial,sans-serif',N='"IBM Plex Mono",monospace';
   t(TITULO+' · aparador Duna',50,72,'700 44px "Barlow Condensed",Arial,sans-serif','#fff');t('IES Virgen de la Esperanza · FCM',1634,70,'500 24px '+B,'#CFE0DA','right');
   t(G.nombre,50,170,'600 42px '+B);t(`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} · ${pad(d.getHours())}:${pad(d.getMinutes())}h · ${mins} min de juego · Intento ${G.vez} · Mueble de ${G.cot.A+2*G.cot.vu} × ${G.cot.F+G.cot.vu} × ${G.cot.H+G.cot.P+G.cot.ge} mm`,50,208,'500 23px '+B,'#55615B');
-  const dato=(a,e,v)=>{t(e,a,258,'500 21px '+B,'#55615B');t(v,a,302,'600 38px '+N)};dato(50,'Nota',coma(nota()));Object.keys(PESO).forEach((k,i)=>dato(200+i*215,`${NOMF[k]} · ${pesoPc(k)} %`,coma(notaB(k))));t('Código de comprobación: ',50,1174,'500 17px '+B,'#55615B');t(cod,250,1174,'600 17px '+N);
+  const dato=(a,e,v)=>{t(e,a,258,'500 21px '+B,'#55615B');t(v,a,302,'600 38px '+N)};dato(50,'Nota',coma(nota()));Object.keys(PESO).forEach((k,i)=>dato(200+i*215,`${NOMF[k]} · ${pesoPc(k)} %`,coma(notaB(k))));t('Código de comprobación: ',50,1174,'500 17px '+B,'#55615B');t('Juego creado por Gustavo Hernández Sánchez · IES Virgen de la Esperanza',1634,1174,'500 17px '+B,'#55615B','right');t(cod,250,1174,'600 17px '+N);
   {const ap=apto(),cx=1500,cy=226,R=84,oro=ap?'#C79A1E':'#B9C2BD';x.save();
    if(ap){for(const sd of[-1,1])for(let i=0;i<10;i++){const a=Math.PI/2+sd*(.3+i*.265),px=cx+(R+13)*Math.cos(a),py=cy+(R+13)*Math.sin(a);for(const tl of[-.55,.55]){x.save();x.translate(px,py);x.rotate(a-sd*Math.PI/2+tl*sd);x.beginPath();x.ellipse(0,0,18,6.6,0,0,7);x.fillStyle=tl<0?'#D9B23A':'#B88A12';x.fill();x.restore()}}
      x.strokeStyle='#B88A12';x.lineWidth=3;x.beginPath();x.arc(cx,cy,R+13,Math.PI/2-.3-9*.265,Math.PI/2+.3+9*.265,true);x.stroke();x.fillStyle='#B88A12';x.beginPath();x.moveTo(cx-16,cy+R+8);x.lineTo(cx,cy+R+20);x.lineTo(cx+16,cy+R+8);x.lineTo(cx,cy+R+14);x.fill()}
