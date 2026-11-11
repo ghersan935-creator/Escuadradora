@@ -215,7 +215,7 @@ function calcula(tk,fn){let i=0;const prim=()=>{const t=tk[i];if(t===undefined)t
   const prod=()=>{let v=prim();while(tk[i]==='*'||tk[i]==='/'){const o=tk[i++],d=prim();v=o==='*'?v*d:v/d}return v};
   const suma=()=>{let v=prod();while(tk[i]==='+'||tk[i]==='-'){const o=tk[i++],d=prod();v=o==='+'?v+d:v-d}return v};
   try{const v=suma();return i===tk.length?v:null}catch(e){return null}}
-const texto=(tk,fn)=>tk.map(t=>esOp(t)?SIG[t]:n1(fn(t))).join(' ');
+const par=tk=>{const T=[[]],O=[];let d=0;tk.forEach(t=>{if(t==='(')d++;if(t===')')d--;if(d===0&&(t==='+'||t==='-')&&T[T.length-1].length){O.push(t);T.push([])}else T[T.length-1].push(t)});if(T.length<2)return tk;const r=[];T.forEach((x,i)=>{if(i)r.push(O[i-1]);if(x.some(t=>t==='*'||t==='/')&&x[0]!=='(')r.push('(',...x,')');else r.push(...x)});return r};const texto=(tk,fn)=>par(tk).map(t=>esOp(t)?SIG[t]:n1(fn(t))).join(' ').replace(/\( /g,'(').replace(/ \)/g,')');
 const r5=v=>Math.round(v*1e5)/1e5,r2=v=>Math.round(v*100)/100,r1=v=>Math.round(v*10)/10;
 const n1=v=>String(r1(v)).replace('.',',');
 const coma=(v,d=2)=>v.toFixed(d).replace('.',',');
