@@ -178,7 +178,7 @@ const KE=E=>5.669/E;
 let cuentaClip=0;
 const r_=(x,y,w,h,e='')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#111" stroke-width="2.2" ${e}/>`;
 const f_=(x,y,w,h,c='#fff')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}" stroke="none"/>`;
-const hr=(x,y,w,h,p='h1')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#${p})" stroke="#111" stroke-width="2.2"/>`;
+const hr=(x,y,w,h,p='h1')=>f_(x,y,w,h)+`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#${p})" stroke="#111" stroke-width="2.2"/>`;
 const ln=(a,b,c,d,w=1.3,e='')=>`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="#111" stroke-width="${w}" ${e}/>`;
 const tx=(x,y,s,z=24,an='middle',rot=0,pes=400)=>`<text x="${x}" y="${y}" font-family="${AR}" font-size="${z}" font-weight="${pes}" fill="#111" text-anchor="${an}"${rot?` transform="rotate(${rot} ${x} ${y})"`:''}>${s}</text>`;
 const flecha=(x,y,dx,dy)=>{const L=15,W=4.2,px=-dy,py=dx;return `<path d="M${x} ${y}L${x-dx*L+px*W} ${y-dy*L+py*W}L${x-dx*L-px*W} ${y-dy*L-py*W}Z" fill="#111"/>`};
@@ -209,7 +209,7 @@ function lamina1(){const g=geo(),{c}=g,k=KE(10),E=10;let o='';const ax=690,top=1
   o+=tx(ax+k*c.A/2,92,'ALZADO',28);
   for(const a of[c.rp,c.A-c.rp-c.pa])o+=R(a,0,c.pa,c.P);o+=R(c.rp+c.pa,c.P-c.ap,c.A-2*c.rp-2*c.pa,c.ap);o+=R(0,c.P,c.A,c.H);o+=R(G1,c.P+G1,g.Ai,g.Hi);for(const a of[G1,c.A-G1])o+=ln(X(a),yT,X(a),yT+k*G1,2.2)+ln(X(a),yB-k*G1,X(a),yB,2.2);
   const yD=c.P+c.H-G1-c.hc;o+=R(G1,yD-G1,g.Ai,G1);o+=R(G1+c.j,yD+c.j,g.Ai-2*c.j,c.hc-2*c.j);
-  const yP=c.P+G1+c.j;for(const a of[G1+c.j,G1+2*c.j+g.wp]){o+=R(a,yP,g.wp,g.dh);o+=R(a+c.b,yP+c.b,g.wp-2*c.b,g.dh-2*c.b)}
+  const yP=c.P+G1+c.j;for(const a of[G1+c.j,G1+2*c.j+g.wp]){o+=R(a,yP,g.wp,g.dh);o+=R(a+c.b,yP+c.b,g.wp-2*c.b,g.dh-2*c.b);for(const u of[a+c.b,a+g.wp-c.b])o+=ln(X(u),y(yP+g.dh),X(u),y(yP),2.2)}
   o+=`<circle cx="${X(c.A/2)}" cy="${y(yD+c.hc/2)}" r="6" fill="none" stroke="#111" stroke-width="2"/>`;
   o+=corteH(X(0),X(c.A),y(yP+g.dh/2),'E');
   o+=cH(X(0),X(c.A),top-34,yT,c.A);o+=cV(yT,yB,ax-84,X(0),c.H);o+=cV(yB,y(0),ax-84,X(c.rp),c.P);o+=cV(y(yD+c.hc),y(yD),X(c.A)+44,X(c.A),c.hc);
@@ -217,7 +217,7 @@ function lamina1(){const g=geo(),{c}=g,k=KE(10),E=10;let o='';const ax=690,top=1
   const px=1290,PX=v=>px+k*v;o+=tx(px+k*c.F/2,92,'PERFIL',28);o+=r_(PX(0),yT,k*c.F,k*c.H);for(const a of[c.rp,c.F-c.rp-c.pa])o+=r_(PX(a),yB,k*c.pa,k*c.P);o+=r_(PX(c.rp+c.pa),yB,k*(c.F-2*c.rp-2*c.pa),k*c.ap);o+=cH(PX(0),PX(c.F),top-34,yT,c.F);
   /* sección E-E: la trasera arriba y el frente abajo */
   const sy=y(0)+78,SY=v=>sy+k*v;o+=tx(ax+k*c.A/2,sy-18,'E-E',28);o+=hr(X(0),SY(0),k*G1,k*c.F)+hr(X(c.A-G1),SY(0),k*G1,k*c.F)+respPlanta(X,SY,k,c,g);o+=r_(X(0),SY(0),k*c.A,k*c.F);
-  const gy=SY(c.F-c.gb);for(const a of[G1+c.j,G1+2*c.j+g.wp]){o+=hr(X(a),gy,k*c.b,k*c.gb);o+=hr(X(a+g.wp-c.b),gy,k*c.b,k*c.gb);o+=ln(X(a+c.b),gy+k*c.gb/2,X(a+g.wp-c.b),gy+k*c.gb/2,3)}
+  const gy=SY(c.F-c.gb);for(const a of[G1+c.j,G1+2*c.j+g.wp]){o+=hr(X(a),gy,k*c.b,k*c.gb);o+=hr(X(a+g.wp-c.b),gy,k*c.b,k*c.gb);{const hq=Math.max(4,k*c.grP);o+=hr(X(a+c.b-(c.rc-1)),gy+k*c.gb/2-hq/2,k*(g.wp-2*c.b+2*(c.rc-1)),hq,'h4')}}
   /* isométrica con las notas de materiales */
   o+=iso('abierto',170,296,400,480);
   o+=rotulo(402,398,548,282,[`Módulo Tablero DM ${c.G}`,'ensamblado con galletas de 10'],true);
@@ -279,7 +279,7 @@ function lamina4(){const g=geo(),{c}=g,E=8,k=KE(E);let o='';const WC=g.WC,LC=g.L
   o+=respPlanta(X,v=>Y(v-tras),k,c,g,xi);
   for(const a of[-c.gu,WC])o+=`<rect x="${X(a)+1.2}" y="${Y(14)}" width="${k*c.gu-2.4}" height="${k*(LC-28)}" fill="#9AA3A9" stroke="#111" stroke-width="1"/>`;
   /* el cajón, visto desde arriba */
-  o+=r_(X(0),Y(0),k*gc,k*LC)+r_(X(WC-gc),Y(0),k*gc,k*LC);o+=r_(X(rb),Y(0),k*(WC-2*rb),k*gc)+r_(X(rb),Y(LC-gc),k*(WC-2*rb),k*gc);
+  {const lat=(x0,d)=>{const q=(u,v)=>`${X(x0+d*u)},${Y(v)}`;return `<polygon points="${q(0,0)} ${q(rb,0)} ${q(rb,gc)} ${q(gc,gc)} ${q(gc,LC-gc)} ${q(rb,LC-gc)} ${q(rb,LC)} ${q(0,LC)}" fill="none" stroke="#111" stroke-width="2.2"/>`};o+=lat(0,1)+lat(WC,-1)+r_(X(rb),Y(0),k*(WC-2*rb),k*gc)+r_(X(rb),Y(LC-gc),k*(WC-2*rb),k*gc)}
   o+=r_(X(-c.gu+c.j),Y(LC),k*(g.Ai-2*c.j),k*G1);o+=tx(X(xi),Y(LC+G1)+34,`Frente de cajón DM ${c.G}`,23,'start');
   o+=corteV(X(WC*.62),Y(-tras),Y(LC+G1),'J');o+=corteH(X(0),X(WC),Y(LC/2),'Y');
   o+=globo(X(WC-gc/2),Y(gc/2),34,'L',X(xd+G1)+28,Y(-tras)-4);o+=globo(X(0),Y(LC*.74),36,'W',X(xi)-30,Y(LC*.74)+58);
