@@ -1096,6 +1096,9 @@ $('#fpar').addEventListener('change',async e=>{const f=e.target.files[0];e.targe
 
 /* ---------- profesorado: clave, guía, certificados, revisión y centro ---------- */
 const PFH='8f63732a48bea89838cc14135f3007c26eabe930788c8a8ac85c3e339ec542cd',PFURL='https://ghersan935-creator.github.io/Escuadradora/corte.html';
+const REG='https://script.google.com/macros/s/AKfycbyAAZffbEfWwG4R0R65RS6T3kyoclR2d8HHC9o83uU34ASnhO9oc62Hzx-hVxAcvC4o/exec';
+function registra(t,c){if(!REG||!c)return;try{fetch(REG,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({t,c})}).catch(()=>{})}catch(e){}}
+setTimeout(()=>{const c=centro();if(!c||location.hash==='#profesor')return;const k='reg-corte:'+c,hoy=new Date().toISOString().slice(0,10);let ya='';try{ya=localStorage.getItem(k)||''}catch(e){}if(ya===hoy)return;try{localStorage.setItem(k,hoy)}catch(e){}registra('apertura',c)},1500);
 let PFOK=false,PFT='guia',PFMAL=false,PFC='';try{PFOK=localStorage.getItem('prof-corte')===PFH}catch(e){}
 function centro(){try{const c=new URLSearchParams(location.search).get('c');return c?c.replace(/[<>&"'`]/g,'').replace(/\s+/g,' ').trim().slice(0,60):''}catch(e){return ''}}
 function pfLineas(t,n){const r=[''];t.split(' ').forEach(w=>{const k=r.length-1;if(r[k]&&(r[k]+' '+w).length>n&&r.length<3)r.push(w);else r[k]=r[k]?r[k]+' '+w:w});return r}
@@ -1120,7 +1123,7 @@ document.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(!
  else if(a==='pftab'){PFT=el.dataset.v;pinta()}
  else if(a==='pfsal'){PFOK=false;REV=false;try{localStorage.removeItem('prof-corte')}catch(e){}pinta()}
  else if(a==='pfrev'){REV=true;revIr('piezas')}
- else if(a==='pfcen'){PFC=($('#pfc').value||'').replace(/[<>&"'`]/g,'').replace(/\s+/g,' ').trim();pinta()}
+ else if(a==='pfcen'){PFC=($('#pfc').value||'').replace(/[<>&"'`]/g,'').replace(/\s+/g,' ').trim();registra('enlace',PFC);pinta()}
  else if(a==='pfcop'){try{navigator.clipboard.writeText(PFURL+'?c='+encodeURIComponent(PFC));el.textContent='Copiado'}catch(e){}}});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='pfk')pfEntra();if(e.key==='Enter'&&e.target&&e.target.id==='pfc'){const b=document.querySelector('[data-a="pfcen"]');if(b)b.click()}});
 
