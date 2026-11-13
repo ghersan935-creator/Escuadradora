@@ -810,7 +810,9 @@ function rec(R,P,cuts,U=300){if(!P.length)return;
   /* con una sola pieza, primero se corta al largo y después se repasa al ancho */
   for(const a of(P.length===1?['x','y']:['y','x'])){const vals=[...new Set(P.map(p=>r1(p[a]+tam(p,a))))].sort((u,v)=>u-v);
     for(const c of vals){const A=P.filter(p=>p[a]+tam(p,a)<=c+.06),B=P.filter(p=>p[a]>=c+K-.06);if(A.length&&B.length&&A.length+B.length===P.length){cuts.push({R:{...R},a,c,m:r1(c-R[a+'0'])});rec({...R,[a+'1']:c},A,cuts,U);return rec({...R,[a+'0']:r1(c+K)},B,cuts,U)}}
-    const hi=Math.max(...P.map(p=>p[a]+tam(p,a)));if(R[a+'1']-hi>.5){cuts.push({R:{...R},a,c:r1(hi),m:r1(hi-R[a+'0'])});return rec({...R,[a+'1']:r1(hi)},P,cuts,U)}}}
+    /* un sobrante estrecho (menos de 50 mm) no se quita antes de separar las piezas: se repasa al final en cada pieza */
+    const hi=Math.max(...P.map(p=>p[a]+tam(p,a)));if(R[a+'1']-hi>.5&&(P.length===1||R[a+'1']-hi>=50)){cuts.push({R:{...R},a,c:r1(hi),m:r1(hi-R[a+'0'])});return rec({...R,[a+'1']:r1(hi)},P,cuts,U)}}
+  for(const a of['x','y']){const hi=Math.max(...P.map(p=>p[a]+tam(p,a)));if(R[a+'1']-hi>.5){cuts.push({R:{...R},a,c:r1(hi),m:r1(hi-R[a+'0'])});return rec({...R,[a+'1']:r1(hi)},P,cuts,U)}}}
 function secuencia(k){const cuts=[],q=G.opt.pz.find(p=>p.mat===G.opt.mats[k]);rec({x0:M,y0:M,x1:W0,y1:H0},plan(k),cuts,q&&q.ve?500:300);return cuts}
 function inicia(){const o=G.opt,bs=o.mats.map((m,k)=>({k,n:secuencia(k).length})).map(x=>x.k);
   S=G.co={f:'epi',bs,bi:0,epi:new Set(),disco:'c',dsel:null,cb:null,vuelve:'altura',alt:60,incl:0,ingOk:false,ingPuesto:false,paso:0,sub:'montaje',on:false,rpm:0,prot:false,asp:false,vista:'corte',tec:{eje:null,buf:''},guia:620,adel:false,tope:400,topeOn:true,herr:'mano',feed:0,fy:-1000,pz:null,recorte:null,mesa:[],map:new Map(),trozo:null,op:null,nid:0,hechas:new Set(),perdidos:0,lupa:false,vistos:new Set(),inc:[],ult:'',tU:0,msg:null};G.fase='corte';G.msg=null;pinta();arranca()}
