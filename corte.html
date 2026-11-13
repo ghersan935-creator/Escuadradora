@@ -805,8 +805,8 @@ const tam=(p,a)=>a==='x'?p.w:p.h,clave=R=>[R.x0,R.y0,R.x1,R.y1].map(v=>r1(v)).jo
 /* orden de cortes: primero las tiras al ancho; cada corte, de lado a lado del trozo */
 function rec(R,P,cuts,U=300){if(!P.length)return;
   for(const a of['y','x']){const lo=Math.min(...P.map(p=>p[a]));if(lo>R[a+'0']+.5){const c=r1(lo-K);cuts.push({R:{...R},a,c,m:r1(c-R[a+'0'])});return rec({...R,[a+'0']:lo},P,cuts,U)}}
-  /* si las piezas ocupan solo un extremo, primero se tronza el trozo entero y el resto queda como retal aprovechable (500 mm con veta, 300 sin veta) */
-  {const hi=Math.max(...P.map(p=>p.x+p.w));if(R.x1-hi-K>=U){cuts.push({R:{...R},a:'x',c:r1(hi),m:r1(hi-R.x0),retal:1});return rec({...R,x1:r1(hi)},P,cuts,U)}}
+  /* solo con el tablero entero (primer corte): si las piezas ocupan solo un extremo, primero se tronza el trozo entero y el resto queda como retal aprovechable (500 mm con veta, 300 sin veta) */
+  {const hi=Math.max(...P.map(p=>p.x+p.w));if(!cuts.length&&R.x1-hi-K>=U){cuts.push({R:{...R},a:'x',c:r1(hi),m:r1(hi-R.x0),retal:1});return rec({...R,x1:r1(hi)},P,cuts,U)}}
   /* con una sola pieza, primero se corta al largo y después se repasa al ancho */
   for(const a of(P.length===1?['x','y']:['y','x'])){const vals=[...new Set(P.map(p=>r1(p[a]+tam(p,a))))].sort((u,v)=>u-v);
     for(const c of vals){const A=P.filter(p=>p[a]+tam(p,a)<=c+.06),B=P.filter(p=>p[a]>=c+K-.06);if(A.length&&B.length&&A.length+B.length===P.length){cuts.push({R:{...R},a,c,m:r1(c-R[a+'0'])});rec({...R,[a+'1']:c},A,cuts,U);return rec({...R,[a+'0']:r1(c+K)},B,cuts,U)}}
