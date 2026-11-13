@@ -665,7 +665,7 @@ function montar(){G.fase='montaje';G.msg=null;const err=[];G.informe={err,n:0,to
   setTimeout(()=>{if(G.fase!=='montaje')return;const t0=performance.now();st.anim.push(t=>{const k=Math.min(1,(t-t0)/(lento?900:1)),e=1-Math.pow(1-k,3);grp.caj.position.z=210*e;grp.pue.rotation.y=1.7*e;return k<1});acaba()},L.length*170*lento+350*lento)}
 
 /* ---------- plan de corte: el alumno coloca sus piezas en tableros de 2440 x 1220 ---------- */
-const TW=2440,TH=1220,SAN=10,DISCO=3.2,FULL=(TW-SAN)*(TH-SAN);
+const TW=2440,TH=1220,SAN=10,DISCO=3,FULL=(TW-SAN)*(TH-SAN);
 const COLT={'Rechapado pino ':'#EBD3A0','Melamina roble ':'#D3AB72','Melamina blanca ':'#F5F3EE','DM ':'#C6A47A'};
 const colMat=m=>m.startsWith('Alistonado')?'#EBC583':COLT[TMS.find(t=>m.startsWith(t))];
 const oW=p=>p.rot?p.A:p.L,oH=p=>p.rot?p.L:p.A,oR=p=>({i:p.i,b:p.b,x:p.x,y:p.y,w:oW(p),h:oH(p)});
