@@ -955,11 +955,11 @@ function pintaIzq(){$('#csobre').innerHTML=sobre()+lupaV();$('#mesac').innerHTML
 /* botón de lupa para alternar entre la máquina entera y el corte */
 function lupaV(){const ent=S.vista==='maquina',t=ent?'Acercar al corte':'Ver la máquina entera';return `<button class="lupav" data-a="cvista" title="${t}" aria-label="${t}"><svg viewBox="0 0 40 40" width="30" height="30"><circle cx="16" cy="16" r="11" fill="rgba(255,255,255,.15)" stroke="#F2C230" stroke-width="3.5"/><path d="M24.5 24.5L36 36" stroke="#F2C230" stroke-width="5" stroke-linecap="round"/><path d="M10 16h12${ent?'M16 10v12':''}" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/></svg></button>`}
 document.head.insertAdjacentHTML('beforeend',`<style>
-#mesac{display:flex;gap:10px;align-items:flex-start}.mesaw{flex:1 1 auto;min-width:0}
+#cmsg{left:60px!important}#mesac{display:flex;gap:10px;align-items:flex-start}.mesaw{flex:1 1 auto;min-width:0}
 .papel{flex:0 0 280px;max-width:44%;background:#FFFDF6;color:#222;padding:12px 14px 14px;box-shadow:2px 3px 8px rgba(0,0,0,.28);transform:rotate(-.6deg);margin:6px 4px 10px 0;font:14px/1.35 Barlow,Arial,sans-serif;background-image:repeating-linear-gradient(transparent 0 23px,rgba(70,120,190,.18) 23px 24px)}
 .papel .pt{font:700 18px/1.2 'Barlow Condensed',Arial,sans-serif;color:#1C2B28;border-bottom:2px solid #C8891E;padding-bottom:3px}.papel .ps{font-size:12px;color:#555;margin:3px 0 6px}
 .papel table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}.papel td{padding:2px 3px;vertical-align:top}.papel td{color:#222}.papel .pc td{font-size:11px;color:#777}
-.lupav{position:absolute;left:8px;bottom:8px;background:rgba(28,43,40,.88);border:2px solid var(--line);border-radius:8px;padding:5px;line-height:0;cursor:pointer}.lupav:hover{border-color:#F2C230}
+.lupav{position:absolute;left:8px;top:8px;z-index:4;background:rgba(28,43,40,.88);border:2px solid var(--line);border-radius:8px;padding:5px;line-height:0;cursor:pointer}.lupav:hover{border-color:#F2C230}
 #der .cab2{display:block}#der .cab2 .mini{display:block;width:100%;max-width:none;margin:0 0 8px}#der .cab2 .ins{font-size:16px;line-height:1.45}
 </style>`);
 
@@ -1020,7 +1020,7 @@ function mano(px,py){c.save();c.translate(px,py);c.fillStyle='#E8B99A';c.strokeS
 function empujador(px,py){c.save();c.translate(px,py);c.fillStyle='#E0A63C';c.strokeStyle='#5E4426';c.lineWidth=1.5;c.beginPath();c.moveTo(-9,-34);c.lineTo(9,-34);c.lineTo(9,-22);c.lineTo(3,-22);c.lineTo(7,54);c.lineTo(-7,54);c.lineTo(-3,-22);c.lineTo(-9,-22);c.closePath();c.fill();c.stroke();c.restore();mano(px+2,py+62)}
 function camara(){let xl=-1050,xr=820,h=1000,cy=-100;const en=S.f==='corte'&&S.pz;
   if(en){const p=S.pz;xl=Math.min(p.x-140,-700);xr=Math.max(p.x+p.w+120,S.guia+160,520);h=p.h;if(S.recorte)xr=Math.max(xr,S.recorte.x+S.recorte.w+120)}
-  if(!en||S.vista==='maquina'){const a=-2700,b=1450,sp=3750;esc=Math.min(W/(b-a),H/sp);ox=W/2-(a+b)/2*esc;oy=H/2+80*esc+18;return}
+  if(!en||S.vista==='maquina'){/* máquina entera: encuadra regla, carro, guía y la pieza aunque el carro esté desplazado */const ryv=!en?1560:(carroMueve()?S.fy+S.pz.h+S.feed:2400),top=Math.max(ryv+190,900),bot=Math.min(-1560,ryv-3060,en?S.fy+S.feed-80:0),a=Math.min(-2700,en?S.pz.x-120:0),b=Math.max(1450,S.guia+260,en?S.pz.x+S.pz.w+120:0),sp=top-bot;esc=Math.min(W/(b-a),(H-60)/sp);ox=W/2-(a+b)/2*esc;oy=H/2+(top+bot)/2*esc+22;return}
   const spanY=Math.max(h,1100)+700;esc=Math.min(W/(xr-xl),H/spanY,.62);{const hw=H/(2*esc),pc=S.fy+S.feed+h/2,lim=Math.max(0,hw-300);cy=Math.min(Math.max(pc,-lim),lim)}ox=W/2-(xl+xr)/2*esc;oy=H/2+cy*esc}
 function dibuja(){c.clearRect(0,0,W,H);camara();BOT=[];
   const en=S.f==='corte'&&S.pz,on=S.rpm>.02,fy=en?S.fy:-900,mueve=en&&carroMueve(),feed=en?S.feed:0,mon=en&&S.sub==='montaje';
