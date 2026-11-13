@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Del árbol al mueble</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Misma familia visual que «Del plano al corte»: el dibujo a la izquierda y el trabajo a la derecha. */
+:root{
+  color-scheme:dark;
+  --bg:#1C2B28; --panel:#26383A; --panel2:#30464A; --ink:#EEF3EC; --ink2:#AFC0B9; --line:#47605F;
+  --am:#F2C230; --ro:#EE6049; --ve:#63D192; --az:#8DB6FF;
+  --f-disp:"Barlow Condensed","Arial Narrow",sans-serif; --f-body:"Barlow","Segoe UI",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+select{background:#101A18;border:1px solid var(--line);padding:5px 6px;max-width:100%}
+:focus-visible{outline:2px solid var(--am);outline-offset:1px}
+#app{height:100%;display:grid;grid-template-columns:minmax(0,58fr) minmax(0,42fr);grid-template-rows:auto minmax(0,1fr);grid-template-areas:"top top" "vis der";gap:10px}
+#app.ancho{grid-template-columns:minmax(0,1fr);grid-template-areas:"top" "der"}
+#app.ancho #vis{display:none}
+header{grid-area:top;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center}
+h1{margin:0;font:700 26px/1 var(--f-disp);letter-spacing:.01em}
+h1 small{display:block;font:500 12px/1.2 var(--f-body);letter-spacing:0;opacity:.8;margin-top:3px}
+#etapas{display:flex;gap:3px;flex:1 1 auto;min-width:0;overflow-x:auto}
+#etapas span{padding:3px 9px;font:600 15px var(--f-disp);letter-spacing:.03em;color:var(--ink2);white-space:nowrap;border-bottom:2px solid var(--line)}
+#etapas span.hecho{color:var(--ve);border-color:var(--ve)}
+#etapas span.ya{color:var(--ink);border-color:var(--am)}
+.nota{display:flex;align-items:baseline;gap:7px;margin-left:auto;color:var(--ink2);font-size:13px}
+.nota b{font:600 22px var(--f-num);color:var(--ink)}
+#vis{grid-area:vis;background:var(--panel);border:1px solid var(--line);min-height:0;display:flex;flex-direction:column;overflow:hidden}
+#vtabs{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:5px 6px;border-bottom:1px solid var(--line);min-height:38px}
+#vtabs .tit{font:600 16px var(--f-disp);letter-spacing:.03em;color:var(--ink2)}
+#vtabs .zoom{margin-left:auto;display:flex;gap:3px}
+#vtabs button{border:1px solid var(--line);background:var(--panel2);padding:3px 9px;font:600 15px var(--f-disp);min-width:32px}
+#hoja{background:#8C9792;flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:2px;touch-action:none;overflow:hidden;position:relative}
+#hoja.html{background:#E9E5DA;align-items:flex-start;overflow:auto;touch-action:auto;padding:12px}
+#hoja svg{display:block;width:100%;height:100%;max-height:100%;user-select:none;-webkit-user-select:none}
+#der{grid-area:der;background:var(--panel);border:1px solid var(--line);overflow:auto;min-height:0;padding:12px 14px 14px;min-width:0}
+h2{margin:0 0 6px;font:700 26px/1.1 var(--f-disp);text-wrap:balance}
+p.ins{margin:0 0 10px;color:var(--ink2)}
+p.ins b{color:var(--ink)}
+.enun{font-size:17px;line-height:1.45;margin:0 0 12px}
+.enun b{color:var(--am)}
+.msg{margin:0 0 10px;padding:8px 11px;border:1px solid var(--line);background:#101A18;font-weight:500}
+.msg.mal{border-color:var(--ro);color:#FFD4CB}
+.msg.bien{border-color:var(--ve);color:#CFF3DE}
+.pri{border:0;background:var(--am);color:#1C2B28;font-weight:600;padding:9px 16px}
+.pri:disabled{opacity:.42;cursor:not-allowed}
+.sec{border:1px solid var(--line);background:var(--panel2);padding:7px 12px;font-weight:500}
+.sec:disabled{opacity:.42;cursor:not-allowed}
+.fila{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+input.txt{width:100%;max-width:360px;padding:8px 9px;background:#101A18;border:1px solid var(--line);margin:0 0 10px;display:block}
+label.et{display:block;margin:0 0 3px;font-size:13px;color:var(--ink2)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{font:600 14px var(--f-disp);letter-spacing:.03em;text-align:left;color:var(--ink2);padding:3px 5px;border-bottom:1px solid var(--line)}
+td{padding:3px 5px;border-bottom:1px solid rgba(71,96,95,.55);vertical-align:top}
+.n{text-align:right;font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.banda{background:var(--panel2);padding:3px 6px;font:600 15px var(--f-disp);letter-spacing:.04em;margin-top:10px}
+.cert{display:block;width:100%;max-width:1150px;border:1px solid var(--line);margin:0 0 8px}
+.cod{display:block;font:600 14px var(--f-num);margin-bottom:8px;word-break:break-all}
+.res2{font-weight:600;margin:10px 0}
+.ayu{font-size:13px;color:var(--ink2);margin:6px 0}
+.fant{position:fixed;left:0;top:0;z-index:50;pointer-events:none;background:var(--am);color:#1C2B28;font-weight:600;padding:5px 10px;box-shadow:0 3px 10px rgba(0,0,0,.4)}
+.por{border:1px solid var(--am);background:#101A18;padding:10px 12px;margin:0 0 10px;line-height:1.42;position:relative}
+.por b.t{color:var(--am);font:600 16px var(--f-disp);letter-spacing:.04em;text-transform:uppercase;margin-right:6px}
+.por.grande{font-size:17px;padding:14px 40px 14px 16px}
+.por .x{position:absolute;right:6px;top:6px;border:1px solid var(--line);background:var(--panel2);width:30px;height:30px;font-size:18px;line-height:1;padding:0}
+.ops{display:grid;gap:6px;margin:0 0 10px}
+.op{display:flex;gap:10px;align-items:center;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel2);padding:9px 11px;font-size:15.5px}
+.op:hover{border-color:var(--am)}
+.op i{flex:0 0 24px;height:24px;border:1px solid var(--ink2);font:600 14px/22px var(--f-num);font-style:normal;text-align:center;color:var(--am)}
+.op.mal{border-color:var(--ro);background:#3a201b;color:#FFD4CB}
+.op.bien{border-color:var(--ve);background:#16302A;color:#CFF3DE}
+.op:disabled{cursor:default}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.chip{border:2px solid var(--line);background:var(--panel2);padding:6px 12px;font:600 16px var(--f-disp);letter-spacing:.03em;touch-action:none;user-select:none}
+.chip.sel{border-color:var(--am);background:#3b4a2a}
+.chip.ok{border-color:var(--ve);color:var(--ve);background:#16302A;cursor:default}
+.campo{display:grid;grid-template-columns:minmax(0,1fr) 120px 40px;gap:8px;align-items:center;margin:0 0 8px}
+.campo label{font-size:15px}
+.campo input{width:100%;padding:7px 8px;background:#101A18;border:1px solid var(--line);text-align:right;font:500 16px var(--f-num)}
+.campo input.ok{border-color:var(--ve);color:var(--ve);background:#16302A}
+.campo input.mal{border-color:var(--ro);color:#FFD4CB;background:#3a201b}
+.campo.ancho{grid-template-columns:minmax(0,1fr)}
+.campo.ancho input{text-align:left}
+.campo span{color:var(--ink2);font-size:14px}
+.sel2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:8px;align-items:center;margin:0 0 7px}
+.sel2 select.ok{border-color:var(--ve);color:var(--ve);background:#16302A}
+.sel2 select.mal,.enc select.mal{border-color:var(--ro);color:#FFD4CB;background:#3a201b}
+.enc select.ok{border-color:var(--ve);color:var(--ve);background:#16302A}
+.ord{display:grid;gap:5px;margin:0 0 10px}
+.ord div{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel2);padding:5px 8px;font-size:16px}
+.ord div b{font:600 15px var(--f-num);color:var(--am);width:22px}
+.ord div span{flex:1}
+.ord button{border:1px solid var(--line);background:#101A18;width:34px;height:30px;padding:0}
+.enc{width:100%}
+.enc td{padding:5px 4px}
+.enc select{width:100%;font-size:14px}
+.enc .pz{font-weight:600}
+.enc .cond{display:block;font-size:13px;color:var(--ink2);font-weight:400}
+.nc{display:inline-block;min-width:22px;height:22px;border-radius:11px;background:var(--ink);color:#1C2B28;text-align:center;font:600 13px/22px var(--f-num);padding:0 4px;margin-right:4px}
+.paso{font:500 13px var(--f-num);color:var(--ink2);margin:0 0 4px}
+.ficha{background:#fff;color:#17201C;border:1px solid #B9C2BD;max-width:760px;width:100%;margin:0 auto;font-size:15px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.ficha .fc{background:#1C2B28;color:#fff;padding:10px 14px;font:700 24px var(--f-disp)}
+.ficha .fc small{display:block;font:500 14px var(--f-body);opacity:.85}
+.ficha table{font-size:14.5px}
+.ficha td{border-bottom:1px solid #E2E5E1;padding:5px 12px}
+.ficha td:first-child{color:#55615B;width:38%;font-weight:600}
+.ficha .tapado{background:#D8DDD9;color:#55615B;padding:1px 8px;font-style:italic}
+.anexo{background:#fff;color:#17201C;width:100%;font-size:13.5px}
+.anexo th{color:#55615B;border-bottom:1px solid #B9C2BD;font-size:13.5px}
+.anexo td{border-bottom:1px solid #E2E5E1}
+.guiaE{background:#fff;color:#17201C;padding:12px 16px;max-width:760px;margin:0 auto;font-size:15.5px;line-height:1.45}
+.guiaE li{margin:0 0 6px}.guiaE li.si{background:#FFF1B8;outline:2px solid #C8891E;padding:2px 4px}
+.vf{display:flex;gap:6px;margin:0 0 10px}
+.vf .op{justify-content:center}
+@media (max-width:900px){
+  html,body{height:auto}
+  #app,#app.ancho{height:auto;grid-template-columns:minmax(0,1fr);grid-template-rows:auto;grid-template-areas:"top" "vis" "der"}
+  #hoja{min-height:0;height:auto;aspect-ratio:10/7}
+  .enc tr:first-child{display:none}.enc,.enc tbody,.enc tr,.enc td{display:block;width:100%}.enc tr{border-bottom:1px solid var(--line);padding:6px 0}.enc td{border:0;padding:3px 0}.enc td[data-l]::before{content:attr(data-l);display:block;font-size:12px;color:var(--ink2)}
+  #hoja.html{height:auto;max-height:none;min-height:0}
+  .campo{grid-template-columns:minmax(0,1fr) 100px 34px}
+  .sel2{grid-template-columns:minmax(0,1fr)}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header><h1>Del árbol al mueble<small>Autor: Gustavo Hernández Sánchez</small></h1><div id="etapas"></div><div class="nota">Nota <b id="nota">10,00</b></div></header>
+  <section id="vis"><div id="vtabs"></div><div id="hoja"></div></section>
+  <section id="der"></section><input type="file" id="fpar" accept=".txt,text/plain" hidden>
+</div>
+<script>
+/* ====================================================================
+   DATOS DEL TEMA: todos salen de la presentación «La madera» (FCM y PCM)
+   y de las fichas técnicas AEIM que usa el profesor.
+   ==================================================================== */
+const TITULO='Del árbol al mueble',SECRETO='IESVE-madera-arbol-2026',JUEGO='madera';
+const PESO={tronco:15,humedad:15,tablas:15,fichas:15,tableros:15,encargo:25};
+const NOMF={tronco:'El tronco',humedad:'Humedad y secado',tablas:'Tablas',fichas:'Fichas técnicas',tableros:'Tableros',encargo:'El encargo'};
+const FASES=[['inicio','Inicio'],['cal','Calentamiento'],['tronco','1 · El tronco'],['humedad','2 · Humedad'],['tablas','3 · Tablas'],['fichas','4 · Fichas'],['tableros','5 · Tableros'],['encargo','6 · El encargo'],['fin','Certificado']];
+const ORDEN=['cal','tronco','humedad','tablas','fichas','tableros','encargo'];
+const DIAP=n=>`(presentación «La madera», diapositiva ${n})`;
+
+/* ---------- especies: fichas AEIM tal como están en la presentación ---------- */
+const ESP=[
+ {id:'sil',n:'Pino silvestre',ci:'Pinus sylvestris',sin:'Pino Valsaín, de Soria, albar, rojo, del Norte, de Flandes, de Riga',g:'Conífera',ori:'Europa y norte de Asia',desc:'Albura amarillo pálido, duramen rojizo. Fibra recta, grano medio a fino. Nudos pequeños a grandes, sanos y saltadizos, medianamente frecuentes; pequeñas bolsas de resina.',de:510,deC:'semiligera',co:.38,coC:'estable',re:1.81,reC:'tendencia media a atejar',at:true,du:1.9,duC:'blanda a semiblanda',fl:'1.057',el:'94.000',cp:'406',tr:'1.020',dur:'De medio a poco durable',imp:'Albura impregnable; duramen de poco a no impregnable',mec:'Todo fácil; secado rápido con riesgo pequeño de deformaciones y fendas.',apl:'Mueble rústico y juvenil, carpintería de huecos, carpintería de armar, madera laminada, chapas y contrachapado, encofrados.'},
+ {id:'rad',n:'Pino radiata',ci:'Pinus radiata',sin:'Pino insignis, pino de Monterrey',g:'Conífera',ori:'Plantaciones en varias zonas del mundo',desc:'Albura blanca amarillenta, duramen pardo amarillento a marrón. Fibra recta, grano medio a basto. Nudos muy abundantes (sanos); madera juvenil y de compresión.',de:500,deC:'semiligera',co:.44,coC:'estable',re:1.5,reC:'sin tendencia a atejar',at:false,du:2.15,duC:'semiblanda',fl:'874',el:'90.000',cp:'434',tr:'',dur:'Poco durable a sensible',imp:'Albura impregnable; duramen de medio a poco impregnable',mec:'Todo fácil; necesita pretaladro para clavar y atornillar.',apl:'Mobiliario rústico y juvenil, carpintería de armar, madera laminada, cercos y frisos, envases, contrachapado y alistonado. Mesilla Tilt y silla VOID.'},
+ {id:'ama',n:'Pino amarillo del sur',ci:'Pinus taeda, P. elliottii, P. echinata, P. palustris',sin:'Pino melis, pino movila, pino tea',g:'Conífera',ori:'Sureste de Estados Unidos',desc:'Albura blanco amarillenta, duramen marrón rojizo. Fibra derecha, grano medio. Nudos, bolsas de resina, enteramiento y madera juvenil.',de:510,deC:'semiligera',co:.41,coC:'estable',re:1.6,reC:'sin tendencia a atejar',at:false,du:2.4,duC:'semiblanda',fl:'975',el:'130.000',cp:'492',tr:'',dur:'De medio durable a sensible',imp:'Duramen no impregnable; albura de medio a poco impregnable',mec:'La resina es su gran problema: embota cuchillas, dificulta el encolado y exige aplicar un fondo antes del acabado. Necesita pretaladro.',apl:'Mueble rústico, carpintería de huecos, carpintería de armar, chapas y contrachapados.'},
+ {id:'abe',n:'Abeto',ci:'Picea abies',sin:'Abeto rojo',g:'Conífera',ori:'Centro y norte de Europa',desc:'Albura blanca amarillenta, duramen amarillo rojizo. Fibra derecha, grano medio a fino. Nudos pequeños, sanos o saltadizos, muy abundantes.',de:450,deC:'ligera',co:.44,coC:'estable',re:2.1,reC:'tendente a alabear',at:true,du:1.5,duC:'blanda',fl:'710',el:'110.000',cp:'450',tr:'',dur:'Poco durable a sensible',imp:'Albura poco impregnable; duramen no impregnable',mec:'Tiende a rajarse al clavar, con poca resistencia al arranque; el tintado queda desigual.',apl:'Carpintería de armar, madera laminada, molduras y rodapiés, chapas decorativas, instrumentos musicales, envases.'},
+ {id:'cas',n:'Castaño',ci:'Castanea sativa',sin:'',g:'Frondosa',ori:'Europa',desc:'Albura blanco amarillenta, duramen marrón a marrón asalmonado. Fibra recta, grano medio. Nudos ojo de perdiz y acebolladura.',de:590,deC:'semiligera',co:.39,coC:'estable',re:1.54,reC:'sin tendencia a atejar',at:false,du:2.5,duC:'semiblanda',fl:'710',el:'100.000',cp:'460',tr:'1.280',dur:'Durable',imp:'Albura impregnable; duramen no impregnable',mec:'Secado lento, riesgo de colapso y fendas. Madera ácida: reacciona con colas alcalinas. Necesita pretaladro.',apl:'Mueble rústico de interior y exterior, carpintería de huecos, carpintería de armar, chapas decorativas, tonelería.'},
+ {id:'nog',n:'Nogal americano',ci:'Juglans nigra',sin:'Nogal negro americano',g:'Frondosa',ori:'Este de Estados Unidos',desc:'Albura de blanco amarillento a pardo claro, duramen pardo rojizo a pardo oscuro. Fibra recta, a veces ondulada, grano medio.',de:610,deC:'semipesada',co:.43,coC:'estable',re:1.42,reC:'sin tendencia a atejar',at:false,du:3.6,duC:'semidura',fl:'1.010',el:'116.000',cp:'523',tr:'',dur:'Medianamente durable',imp:'Albura impregnable; duramen poco o nada impregnable',mec:'Secado lento, riesgo de colapso. Todo lo demás, fácil.',apl:'Mueble fino, talla, torneado, mueble curvado, escaleras, chapas decorativas.'},
+ {id:'hay',n:'Haya',ci:'Fagus sylvatica',sin:'',g:'Frondosa',ori:'Europa',desc:'Albura y duramen de blanco anaranjado a rosa claro. Fibra recta, grano fino. Tensiones de crecimiento; falso corazón rojo (ataque cromógeno).',de:730,deC:'pesada',co:.51,coC:'nerviosa',re:2.05,reC:'tendencia a atejar',at:true,du:4.0,duC:'semidura',fl:'1.100',el:'145.000',cp:'580',tr:'1.200',dur:'Sensible',imp:'Impregnable',mec:'Secado difícil y lento. Se curva, tornea y talla bien; toma muy bien los tintes.',apl:'Ebanistería fina, curvado y torneado, tarimas, contrachapados, artículos deportivos.'},
+ {id:'fre',n:'Fresno europeo',ci:'Fraxinus excelsior, F. angustifolia',sin:'',g:'Frondosa',ori:'Europa',desc:'Albura y duramen de blanca a blanca rosada. Fibra recta, grano medio. Nudos ojo de perdiz; falso corazón oscuro.',de:690,deC:'semipesada',co:.45,coC:'estable a nerviosa',re:1.64,reC:'sin tendencia a atejar',at:false,du:4.2,duC:'semidura',fl:'1.130',el:'129.000',cp:'510',tr:'1.450',dur:'Sensible',imp:'Medianamente impregnable',mec:'Se curva bien. Da problemas con las colas de resorcina; necesita pretaladro.',apl:'Mueble rústico y fino, tarimas, molduras, chapas, artículos deportivos.'},
+ {id:'rob',n:'Roble blanco americano',ci:'Quercus alba',sin:'',g:'Frondosa',ori:'Estados Unidos y Canadá',desc:'Albura de crema a marrón claro, duramen de marrón amarillo pálido a marrón oscuro. Fibra recta, grano de medio a basto. Es la frondosa americana más comercial en el mercado español.',de:null,deT:'670–770',deC:'semipesada',co:.48,coC:'medianamente nerviosa',re:1.67,reC:'sin dato de tendencia',at:null,du:null,duT:'33 Brinell',duC:'dura',fl:'≈ 1.030',el:'≈ 132.600',cp:'≈ 490–510',tr:'',dur:'Durable a medianamente durable',imp:'Albura medianamente impregnable; duramen no impregnable',mec:'Secado lento, con riesgo de fendas superficiales. Colas alcalinas y ácidas pueden dar problemas; necesita pretaladro. Acabado fácil.',apl:'Mueble de interior, carpintería de interior (puertas, ventanas, suelos, frisos), carpintería estructural, tonelería, chapas y contrachapados.'},
+ {id:'bos',n:'Bossé',ci:'Guarea cedrata, G. laurentii',sin:'',g:'Tropical',ori:'África',desc:'Albura marrón pálido, duramen marrón rosado. Fibra recta, a veces ligeramente entrelazada, grano fino a medio.',de:600,deC:'semiligera a semipesada',co:.43,coC:'estable a ligeramente nerviosa',re:1.61,reC:'tendencia a atejar',at:true,du:3.6,duC:'semidura',fl:'1.100',el:'109.000',cp:'510',tr:'',dur:'Durable',imp:'Albura impregnable',mec:'Contiene sílice, que desgasta rápido las sierras; puede causar alergias (aspiración y mascarilla). Exuda resina en el acabado.',apl:'Ebanistería fina de interior y exterior, piezas torneadas, puertas y ventanas, chapas y contrachapado.'},
+ {id:'iro',n:'Iroko',ci:'Chlorophora excelsa, C. regia',sin:'Teca africana',g:'Tropical',ori:'África',desc:'Albura blanco amarillenta, duramen marrón amarillento que pasa a pardo rojizo con la luz. Fibra recta, con frecuencia ligeramente entrelazada, grano medio a basto.',de:650,deC:'semipesada',co:.36,coC:'estable',re:1.57,reC:'sin tendencia a atejar',at:false,du:3.9,duC:'semidura',fl:'955',el:'105.000',cp:'540',tr:'800',dur:'Muy durable',imp:'Albura impregnable; duramen no impregnable',mec:'Depósitos calcáreos abrasivos; repelo con fibra entrelazada. Problemas con colas de caseína; sus taninos afectan a barnices oxidantes.',apl:'Mueble de exterior, carpintería exterior, escaleras, tarima.'},
+ {id:'fra',n:'Framiré',ci:'Terminalia ivorensis',sin:'',g:'Tropical',ori:'África',desc:'Albura blanco amarillenta, duramen amarillo a pardo amarillento. Fibra recta, a veces ligeramente entrelazada, grano medio.',de:530,deC:'semiligera',co:.34,coC:'muy estable',re:1.5,reC:'sin tendencia a atejar',at:false,du:1.9,duC:'blanda a semiblanda',fl:'870',el:'94.000',cp:'450',tr:'',dur:'Medianamente durable',imp:'Duramen no impregnable; albura medianamente impregnable',mec:'Fácil de trabajar; puede levantar repelo. Al ser ácida, da problemas con colas ácidas.',apl:'Mueble de interior y exterior, escaleras, puertas y ventanas, contrachapado.'},
+ {id:'sap',n:'Sapelli',ci:'Entandrophragma cylindricum',sin:'Abebay',g:'Tropical',ori:'África',desc:'Albura blanco rosácea a gris rosácea, duramen rosado recién cortado que pasa a pardo rojizo violáceo con la luz. Fibra muy a menudo entrelazada, grano fino a medio.',de:680,deC:'semipesada',co:.43,coC:'estable a ligeramente nerviosa',re:1.55,reC:'sin tendencia a atejar',at:false,du:3.9,duC:'semidura',fl:'1.150',el:'120.000',cp:'590',tr:'860',dur:'Medianamente durable',imp:'Duramen poco impregnable; albura medianamente impregnable',mec:'Se levanta repelo por la fibra entrelazada, pero se curva muy bien. Todo lo demás, sin dificultad.',apl:'Ebanistería fina, mueble curvado y torneado, parquet, puertas y ventanas, chapas.'},
+];
+const esp=id=>ESP.find(e=>e.id===id);
+/* avisos de mecanización (diapositiva 29 y fichas): a qué especies se aplican */
+const AVISOS=[
+ ['Contiene sílice, que desgasta rápido las sierras',['bos']],
+ ['Levanta repelo al cepillar por su fibra entrelazada',['iro','sap','bos','fra']],
+ ['Da problemas con algunas colas',['cas','fra','rob','iro','fre','ama']],
+ ['Sus taninos frenan el secado de los barnices oxidantes',['iro']],
+ ['Su resina embota las cuchillas y exige un fondo antes del acabado',['ama']],
+ ['Necesita pretaladro para clavar y atornillar',['cas','fre','rad','ama','rob']],
+ ['Se raja al clavar y el tinte queda desigual',['abe']],
+ ['Secado difícil y lento',['hay']],
+ ['Secado lento con riesgo de colapso',['nog','cas']],
+ ['Se curva muy bien',['hay','fre','sap','nog']],
+ ['Toma muy bien los tintes',['hay']],
+ ['Puede causar alergias: aspiración y mascarilla',['bos']],
+ ['Todo fácil de mecanizar',['sil','rad','fra']],
+];
+const DURAB=['Muy durable','Durable','Medianamente durable','De medio a poco durable','Poco durable a sensible','Sensible'];
+const DENS_C=['ligera','semiligera','semiligera a semipesada','semipesada','pesada'];
+const DUR_C=['blanda','blanda a semiblanda','semiblanda','semidura','dura'];
+
+/* ---------- calentamiento: la madera como material del futuro (diap. 3 a 9) ---------- */
+const CAL=[
+ ['«La madera se pudre»: aunque esté bien diseñada, tratada y mantenida, no dura mucho','F','Falso. Con buen diseño (que no se acumule humedad), la especie o el tratamiento adecuado y mantenimiento dura siglos: hay edificios de madera de más de 300 y 400 años.'],
+ ['En un incendio, la madera colapsa de golpe, como el acero','F','Falso. Arde, pero la capa carbonizada protege el interior. Apenas se dilata y no se contrae de golpe al mojarla, como el acero: no colapsa bruscamente.'],
+ ['Usar madera certificada de bosques gestionados destruye los bosques','F','Falso. Lo que destruye los bosques es la tala ilegal. La madera certificada (sello FSC) viene de bosques bien gestionados.'],
+ ['La madera es cara','D','Depende. Las estructuras de madera compiten con las de acero y hormigón en el mismo rango de precio.'],
+ ['Al crecer, el árbol toma CO₂ de la atmósfera y lo fija en su madera','V','Verdadero. Es un sumidero de carbono y, convertida en mueble o edificio, sigue guardando ese carbono mientras dura.'],
+ ['Fabricar los materiales de un edificio de madera emite menos de la mitad de CO₂ que uno de hormigón y ladrillo','V','Verdadero. En el estudio de un edificio de 32 viviendas: 293 kg de CO₂/m² frente a 600, y un 40 % menos de energía de fabricación.'],
+ ['La capacidad aislante de la madera es cinco veces la del ladrillo','V','Verdadero. Es un buen aislante térmico.'],
+ ['La madera tiene una relación resistencia/peso comparable a la del acero','V','Verdadero. Y pesa hasta un 75 % menos, así que las cimentaciones son más pequeñas.'],
+ ['La madera se transforma con procesos térmicos que queman combustibles fósiles','F','Falso. Se transforma con procesos mecánicos (cortar, prensar, taladrar). Son el acero, el cemento y la cerámica los que necesitan procesos térmicos.'],
+ ['Las ventajas ambientales de la madera valen aunque venga de tala ilegal','F','Falso. Solo valen si procede de bosques bien gestionados, con certificación forestal (sello FSC).'],
+ ['La madera regula la humedad del aire absorbiendo y cediendo vapor de agua','V','Verdadero. Por eso crea un ambiente saludable.'],
+ ['Al final de su vida, la madera se puede reutilizar, reciclar o compostar','V','Verdadero. Tiene una segunda vida.'],
+ ['La madera resiste mal los terremotos porque es rígida','F','Falso. Es flexible y absorbe el movimiento sin colapsar.'],
+];
+
+/* ---------- defectos de las tablas (diapositivas 31 a 34) ---------- */
+const DEFECTOS={
+ nsano:{n:'Nudo sano',d:33},nmuerto:{n:'Nudo muerto (saltadizo)',d:33},npod:{n:'Nudo podrido',d:33},
+ abarq:{n:'Abarquillado',d:31},canto:{n:'Canto curvado',d:31},cara:{n:'Cara curvada',d:31},alabeo:{n:'Alabeo',d:31},
+ fenda:{n:'Fenda en la testa',d:32},resina:{n:'Bolsa de resina',d:34},medula:{n:'Médula en la pieza',d:11},
+};
+const DESTINO=['Usarla tal cual','Sanear la zona (cortarla) o llevarla a una pieza oculta','Sanear la testa (cortarla) antes de dar la medida final','Desechar siempre la zona dañada'];
+
+/* ---------- tableros derivados (diapositivas 50 a 56) ---------- */
+const TAB={
+ alis:{n:'Alistonado',g:[18,22,25,30,40],d:51,q:[['¿Cómo deben ir colocados los anillos de los listones?',['Alternados: uno hacia arriba y el siguiente hacia abajo','Todos en el mismo sentido','Da igual, no influye','Todos con la médula hacia la cara vista'],0,'Alternados, para que los movimientos se compensen y el tablero quede plano.'],['¿De qué está hecho?',['De listones de madera maciza encolados por los cantos','De chapas finas cruzadas','De partículas prensadas','De fibras de madera'],0,'']]},
+ alisr:{n:'Alistonado rechapado',g:[16,19,22,25,30],d:51,q:[['¿Qué ventaja tiene sobre el alistonado sin rechapar?',['Es estable y tiene aspecto de madera noble','Aguanta la intemperie sin tratar','Es el más barato','No hay que cubrir sus cantos'],0,'Un alma de listones recubierta de chapa decorativa: estable y con aspecto de madera noble.']]},
+ contra:{n:'Contrachapado',g:[4,5,6,10,16,19,22],d:52,q:[['¿Por qué se cruzan a 90° las fibras de las chapas?',['Para que sea estable y resistente en las dos direcciones','Para ahorrar cola','Para que se curve mejor','Para que pese menos'],0,''],['¿Cuántas chapas lleva siempre un contrachapado?',['Un número impar','Un número par','Siempre tres','Siempre cinco'],0,''],['Si este contrachapado se encola con cola resistente al agua, ¿cómo se llama?',['Tablero marino','Tablero hidrófugo de partículas','DM hidrófugo','Tablex'],0,'Tablero marino: ambientes húmedos y náutica, de okume o de pino.'],['¿Cuántas chapas tiene esta muestra?','num',0,'']]},
+ aglo:{n:'Aglomerado',g:[10,16,19,22,25,30],d:53,q:[['¿Cómo agarran los tornillos en su canto?',['Poco','Muy bien, como en madera maciza','Igual que en la cara','Muy bien si se pretaladra'],0,'Barato y estable, pero pesado, sensible a la humedad y con poco agarre de tornillos en el canto.'],['¿Cómo se comporta con la humedad?',['Es sensible a la humedad','Aguanta la intemperie','Es el más resistente al agua','No le afecta porque lleva cola'],0,'']]},
+ aglocd:{n:'Aglomerado de caras densas',g:[16,19,22,25,30],d:53,q:[['¿Para qué sirven sus caras de partículas más finas?',['Para tener caras más lisas, listas para rechapar o pintar','Para que aguante la humedad','Para que agarren mejor los tornillos en el canto','Para que pese menos'],0,'']]},
+ aglohi:{n:'Aglomerado hidrófugo',g:[16,19,22,25,30],d:53,q:[['¿En qué zonas se usa?',['Zonas húmedas como cocinas y baños','Locales públicos, por el fuego','Exterior sin protección','Traseras de muebles'],0,'Se reconoce por su color verde.']]},
+ mela:{n:'Melamina',g:[10,16,19,25,30],d:53,q:[['¿Qué hay que hacerle antes de montarlo?',['Solo cantearlo','Lijarlo y barnizarlo','Lacarlo','Rechaparlo'],0,'Viene recubierto de papel decorativo, listo para usar.'],['¿Qué canto se le pone normalmente?',['Cinta de PVC o ABS pegada con calor en la canteadora','Contracanto macizo','Ninguno','Chapa natural'],0,''],['¿Se puede reparar si se astilla la cara?',['No','Sí, lijándola','Sí, con tinte','Sí, con cola'],0,'']]},
+ osb:{n:'OSB',g:[10,16,19,22,25],d:53,q:[['¿Para qué se usa?',['Construcción, embalaje y mueble de estética industrial','Muebles lacados','Mueble de baño','Fondos de cajón'],0,'Virutas grandes orientadas en capas cruzadas: resistente.']]},
+ dm:{n:'DM',g:[4,5,6,10,16,19,22,25,30],d:54,q:[['¿Qué acabado le va especialmente bien?',['El lacado: homogéneo, sin veta y sin poro','El aceite, para ver su veta','La intemperie sin protección','Ninguno: no se puede acabar'],0,''],['¿Qué medida de PRL exige al mecanizarlo?',['Siempre con aspiración y mascarilla: genera un polvo muy fino','Guantes al cortar en la escuadradora','Ninguna especial','Solo gafas'],0,''],['¿Admite perfilar (moldurar) los cantos?',['Sí','No','Solo si es hidrófugo','Solo con chapa'],0,'Se mecaniza, fresa y laca muy bien, y admite perfilar los cantos.']]},
+ dmhi:{n:'DM hidrófugo',g:[10,16,19,22,25],d:54,q:[['¿Para qué se usa?',['Ambientes húmedos','Locales públicos','Traseras de muebles','Exterior a la intemperie'],0,'Se reconoce por su color verde.']]},
+ dmig:{n:'DM ignífugo',g:[10,16,19,22,25],d:54,q:[['¿Dónde se usa?',['En locales públicos: mejor comportamiento frente al fuego','En baños','En exterior','En fondos de cajón'],0,'Se reconoce por su color rojo.']]},
+ tablex:{n:'Tablex',g:[3,4,5],d:54,q:[['¿Para qué piezas se usa?',['Traseras de muebles y fondos de cajón','Encimeras de cocina','Mueble de exterior','Baldas con mucha carga'],0,'Fibras duro y fino, con una cara lisa.']]},
+};
+const TIPOS_TAB=Object.keys(TAB);
+/* revestimientos de cara (diapositiva 55) */
+const REVS={
+ rmela:{n:'Melamina',q:['¿Qué inconveniente tiene?',['No se puede reparar si se astilla','No admite canto','Hay que barnizarla','Absorbe la humedad por la cara'],0,'Papel decorativo impregnado en resina, termofusionado a alta presión y temperatura.']},
+ rchapa:{n:'Chapa natural',q:['¿Qué se le puede hacer que no admite la melamina?',['Lijarla y barnizarla','Pegarle canto de PVC','Lavarla con agua a presión','Nada'],0,'Lámina fina de madera real: aspecto de maciza, más delicada y cara.']},
+ rhpl:{n:'Laminado de alta presión',q:['¿Dónde se usa, por su resistencia?',['En encimeras y mobiliario de uso intensivo','En traseras de armario','Solo en muebles de exterior','En fondos de cajón'],0,'Varias capas de papel kraft con resina fenólica, prensadas a muy alta presión: resiste golpes, calor y humedad.']},
+ rlaca:{n:'Lacado',q:['¿Sobre qué tablero se aplica directamente?',['Sobre DM, por su superficie lisa y sin poro','Sobre OSB','Sobre aglomerado sin caras densas','Sobre melamina'],0,'Acabado uniforme en cualquier color; se puede rayar o descascarillar con un golpe.']},
+};
+
+/* ---------- el encargo: materiales que se pueden elegir y reglas (diap. 57 a 60) ---------- */
+const MACIZAS=ESP.map(e=>e.n);
+const BASES=['Alistonado de pino','Alistonado rechapado','Contrachapado','Tablero marino','Aglomerado','Aglomerado de caras densas','Aglomerado hidrófugo','OSB','DM','DM hidrófugo','DM ignífugo','Tablex'];
+const MATS=[...BASES,...MACIZAS];
+const REV_OPS=['Sin revestimiento (se barniza, aceita o tiñe)','Melamina','Chapa natural','Laminado de alta presión','Lacado','Ninguno: va en bruto'];
+const esMaciza=m=>MACIZAS.includes(m)||m==='Alistonado de pino'||m==='Alistonado rechapado';
+const esDM=m=>/^DM/.test(m),esAglo=m=>/^Aglomerado/.test(m);
+/* qué revestimientos admite cada material */
+function revValido(m,r){if(r===REV_OPS[0])return esMaciza(m)||m==='Tablero marino'||m==='OSB'||m==='Contrachapado';if(r===REV_OPS[5])return m==='Tablex'||m==='OSB';if(esMaciza(m))return false;if(r==='Lacado')return esDM(m);if(r==='Melamina')return esDM(m)||esAglo(m);if(r==='Chapa natural')return esDM(m)||m==='Aglomerado de caras densas'||m==='Contrachapado';if(r==='Laminado de alta presión')return esDM(m)||esAglo(m)||m==='Contrachapado';return false}
+const cantoDe=r=>r==='Melamina'?'Cinta de PVC o ABS':r==='Chapa natural'?'Chapa o contracanto macizo':null;
+const CANTO_OPS=['Cinta de PVC o ABS','Chapa o contracanto macizo','No lleva canto'];
+/* condiciones de uso: materiales y revestimientos que se aceptan */
+const USOS={
+ bano:{t:'Zona húmeda (baño o fregadero)',m:['Aglomerado hidrófugo','DM hidrófugo'],r:['Melamina','Lacado','Laminado de alta presión'],p:'En zonas húmedas: tablero hidrófugo (verde), de partículas o de fibras '+DIAP(58)},
+ banoLaca:{t:'Zona húmeda, acabado lacado',m:['DM hidrófugo'],r:['Lacado'],p:'El lacado va sobre DM, y en zona húmeda el DM tiene que ser hidrófugo (verde) '+DIAP(54)},
+ trasera:{t:'Oculta: trasera o fondo de cajón',m:['Tablex'],r:[REV_OPS[5]],p:'Traseras de muebles y fondos de cajón: tablex, fino, ligero y barato, con una cara lisa '+DIAP(59)},
+ publico:{t:'Local público',m:['DM ignífugo'],r:['Melamina','Chapa natural','Laminado de alta presión','Lacado'],p:'En un local público: DM ignífugo (rojo), por su comportamiento frente al fuego '+DIAP(59)},
+ publicoLaca:{t:'Local público, lacado en color',m:['DM ignífugo'],r:['Lacado'],p:'Local público: DM ignífugo (rojo); el lacado va sobre DM '+DIAP(54)},
+ publicoEnc:{t:'Local público, uso intensivo (golpes, calor)',m:['DM ignífugo'],r:['Laminado de alta presión'],p:'Local público: DM ignífugo; y para uso intensivo, laminado de alta presión '+DIAP(55)},
+ lacado:{t:'Interior seco, lacado en color',m:['DM'],r:['Lacado'],p:'Si va lacado: DM, homogéneo y sin veta, que se laca muy bien '+DIAP(59)},
+ perfil:{t:'Interior, canto moldurado y lacado',m:['DM'],r:['Lacado'],p:'El DM admite perfilar los cantos y se laca muy bien '+DIAP(54)},
+ exterior:{t:'Exterior, a la intemperie, en madera maciza',m:['Iroko','Castaño','Bossé'],r:[REV_OPS[0]],p:'Exterior: madera durable; el iroko es muy durable y el castaño y el bossé, durables '+DIAP(28)},
+ marino:{t:'Exterior húmedo, en tablero',m:['Tablero marino'],r:[REV_OPS[0]],p:'Tablero en ambiente húmedo o náutico: tablero marino, contrachapado con cola resistente al agua '+DIAP(52)},
+ curvado:{t:'Pieza curvada al vapor',m:['Haya','Sapelli','Fresno europeo','Nogal americano'],r:[REV_OPS[0]],p:'Para curvar: haya, sapelli o fresno '+DIAP(60)+'; el nogal también se usa en mueble curvado.'},
+ torneado:{t:'Pieza torneada',m:['Haya','Bossé','Nogal americano','Sapelli'],r:[REV_OPS[0]],p:'Para tornear: haya o bossé '+DIAP(60)+'; nogal y sapelli también se tornean, según su ficha.'},
+ tinte:{t:'Se va a teñir de un color uniforme',m:['Haya'],r:[REV_OPS[0]],p:'La haya toma muy bien los tintes; el abeto tiñe desigual '+DIAP(60)},
+ intensivo:{t:'Interior, uso intensivo (golpes, calor)',m:['Aglomerado','Aglomerado de caras densas','Aglomerado hidrófugo','DM','DM hidrófugo','Contrachapado'],r:['Laminado de alta presión'],p:'Encimeras y mobiliario de uso intensivo: laminado de alta presión '+DIAP(55)},
+ cocinaEnc:{t:'Encimera junto al agua (golpes, calor)',m:['Aglomerado hidrófugo','DM hidrófugo'],r:['Laminado de alta presión'],p:'Zona húmeda: tablero hidrófugo; uso intensivo: laminado de alta presión '+DIAP(55)},
+ veta:{t:'Interior, se verá la veta de la madera',m:['Alistonado rechapado','Alistonado de pino',...MACIZAS,'DM','Aglomerado de caras densas','Contrachapado'],r:[REV_OPS[0],'Chapa natural'],p:'Si se ve la veta: maciza o rechapada '+DIAP(60)+'. Un tablero de DM, de caras densas o contrachapado tiene que llevar chapa natural.'},
+ economico:{t:'Interior, blanco, económico',m:['Aglomerado','Aglomerado de caras densas','DM'],r:['Melamina'],p:'Interior, blanco y económico: melamina, recubierta de papel decorativo y lista para usar '+DIAP(53)},
+ industrial:{t:'Estética industrial, virutas a la vista',m:['OSB'],r:[REV_OPS[0],REV_OPS[5]],p:'Virutas grandes orientadas a la vista: OSB, para mueble de estética industrial '+DIAP(53)},
+};
+/* muebles del encargo: grupo A interior, lacado y tableros; grupo B maciza, exterior y veta vista */
+const ENCARGOS=[
+ {id:'bano',g:'A',n:'Mueble de baño suspendido',cli:'Un cliente quiere un mueble bajo el lavabo de su cuarto de baño, con las puertas lacadas en verde.',pz:[['Costados y fondo','bano'],['Puertas','banoLaca'],['Encimera','cocinaEnc'],['Trasera','trasera'],['Fondo del cajón','trasera']]},
+ {id:'mostrador',g:'A',n:'Mostrador de una cafetería',cli:'Una cafetería pide un mostrador nuevo, con el frente lacado en rojo y una encimera muy resistente.',pz:[['Frente del mostrador','publicoLaca'],['Encimera','publicoEnc'],['Costados','publico'],['Baldas interiores','publico']]},
+ {id:'armario',g:'A',n:'Armario de dormitorio',cli:'Una familia quiere un armario con las puertas lacadas en blanco y el canto moldurado, y el interior blanco y económico.',pz:[['Puertas','perfil'],['Costados y baldas interiores','economico'],['Trasera','trasera'],['Fondos de cajón','trasera'],['Frentes de cajón','lacado']]},
+ {id:'cocina',g:'A',n:'Mueble bajo de cocina',cli:'El mueble bajo del fregadero, con las puertas lacadas en gris y la encimera junto al agua.',pz:[['Costados bajo el fregadero','bano'],['Puertas','banoLaca'],['Encimera','cocinaEnc'],['Trasera','trasera']]},
+ {id:'oficina',g:'A',n:'Mesa de trabajo de una oficina',cli:'Una empresa quiere mesas de trabajo de uso intensivo, con el faldón lacado en color.',pz:[['Tablero de la mesa','intensivo'],['Faldón delantero','lacado'],['Costados de la cajonera','economico'],['Fondo del cajón','trasera']]},
+ {id:'jardin',g:'B',n:'Conjunto de jardín',cli:'Un cliente quiere una mesa y un banco de madera maciza para su jardín, y un arcón de tablero para los cojines.',pz:[['Tablero de la mesa','exterior'],['Patas','exterior'],['Asiento del banco','exterior'],['Arcón para los cojines','marino']]},
+ {id:'silla',g:'B',n:'Sillas de comedor',cli:'Un restaurante quiere sillas con el respaldo curvado al vapor, patas torneadas y travesaños teñidos en negro.',pz:[['Respaldo curvado','curvado'],['Patas torneadas','torneado'],['Travesaños teñidos','tinte']]},
+ {id:'aparador',g:'B',n:'Aparador de salón barnizado',cli:'Un aparador de salón en el que se vea la veta de la madera, barnizado, con trasera y cajones.',pz:[['Puertas','veta'],['Encimera','veta'],['Costados','veta'],['Trasera','trasera'],['Fondo del cajón','trasera']]},
+ {id:'estanteria',g:'B',n:'Estantería de estilo industrial',cli:'Una estantería para un local de estilo industrial, con las virutas del tablero a la vista y montantes de madera teñidos.',pz:[['Baldas','industrial'],['Montantes teñidos','tinte'],['Trasera','trasera']]},
+ {id:'barca',g:'B',n:'Bancos de una barca',cli:'Un cliente del puerto quiere los bancos de su barca en tablero y unos asideros de madera maciza para el exterior.',pz:[['Bancos de tablero','marino'],['Asideros macizos','exterior'],['Tapa del cofre','marino']]},
+];
+
+/* ====================================================================
+   DIBUJOS: todo en SVG, generado con la semilla de cada alumno e intento
+   viewBox común de 1000 × 700
+   ==================================================================== */
+const VW=1000,VH=700;
+function RNG(s){let a=s>>>0;return ()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296}}
+const ri=(r,a,b)=>a+Math.floor(r()*(b-a+1)),rf=(r,a,b)=>a+r()*(b-a),pick=(r,L)=>L[Math.floor(r()*L.length)];
+function baraja(r,L){const o=[...L];for(let i=o.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[o[i],o[j]]=[o[j],o[i]]}return o}
+const F=v=>Math.round(v*10)/10;
+const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const FONT="font-family=\"Barlow,Arial,sans-serif\"";
+const tx=(x,y,t,sz=22,an='middle',col='#17201C',w=600)=>`<text x="${F(x)}" y="${F(y)}" ${FONT} font-size="${sz}" font-weight="${w}" text-anchor="${an}" fill="${col}">${esc(t)}</text>`;
+const fondo=(c='#F4F1E8')=>`<rect x="0" y="0" width="${VW}" height="${VH}" fill="${c}"/>`;
+const svgDe=(cuerpo,extra='')=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VW} ${VH}" ${extra}>${cuerpo}</svg>`;
+const tono=(hex,k)=>{const n=parseInt(hex.slice(1),16),c=[n>>16,n>>8&255,n&255].map(v=>Math.max(0,Math.min(255,Math.round(v*k))));return '#'+c.map(v=>v.toString(16).padStart(2,'0')).join('')};
+function cota(x1,y1,x2,y2,t,off=26,sz=21){const dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy),nx=-dy/L*off,ny=dx/L*off,a=x1+nx,b=y1+ny,c=x2+nx,d=y2+ny,mx=(a+c)/2,my=(b+d)/2;let ang=Math.atan2(dy,dx)*180/Math.PI;if(ang>90||ang<-90)ang+=180;
+ const ux=nx/Math.abs(off),uy=ny/Math.abs(off),dd=sz*.8;
+ return `<g stroke="#33413D" stroke-width="1.6" fill="none"><line x1="${F(x1)}" y1="${F(y1)}" x2="${F(a+nx*.15)}" y2="${F(b+ny*.15)}"/><line x1="${F(x2)}" y1="${F(y2)}" x2="${F(c+nx*.15)}" y2="${F(d+ny*.15)}"/><line x1="${F(a)}" y1="${F(b)}" x2="${F(c)}" y2="${F(d)}" marker-start="url(#fl)" marker-end="url(#fl)"/></g><text ${FONT} font-size="${sz}" font-weight="600" fill="#17201C" text-anchor="middle" dominant-baseline="central" transform="translate(${F(mx+ux*dd)},${F(my+uy*dd)}) rotate(${F(ang)})">${esc(t)}</text>`}
+const DEFS=`<defs><marker id="fl" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1.5 L10 5 L0 8.5 z" fill="#33413D"/></marker></defs>`;
+
+/* ---------- tronco: sección transversal con sus partes ---------- */
+const PARTES=['corteza','liber','camb','albura','duramen','medula'];
+const NPARTE={corteza:'Corteza',liber:'Líber',camb:'Cámbium',albura:'Albura',duramen:'Duramen',medula:'Médula'};
+function troncoNuevo(r){const R=280,cx=410,cy=362,c=rf(r,.065,.085),l=.028,k=.014,al=rf(r,.15,.26),md=.035;
+ const a=rf(r,0,6.283),d=rf(r,.03,.11)*R,px=cx+Math.cos(a)*d,py=cy+Math.sin(a)*d;
+ const B=[R,R*(1-c),R*(1-c-l),R*(1-c-l-k),R*(1-c-l-k-al),R*md];
+ const N=ri(r,8,15),i0=ri(r,2,N-5),ln=ri(r,3,4),tipo=r()<.5?'lluvia':'sequia',w=[];for(let i=0;i<N;i++)w.push(i>=i0&&i<i0+ln?(tipo==='lluvia'?rf(r,1.75,2.1):rf(r,.36,.48)):rf(r,.78,1.22));
+ const tot=w.reduce((s,v)=>s+v,0),anillos=[];let acc=B[5];for(const v of w){acc+=v/tot*(B[3]-B[5]);anillos.push(acc)}
+ const th=rf(r,-.5,.35),Q=[cx+Math.cos(th)*(B[1]+B[3])/2,cy+Math.sin(th)*(B[1]+B[3])/2],phi=th+Math.PI*rf(r,.75,1.25);
+ const tA=pick(r,[['#E7CF9C','#B07842'],['#EBD7AE','#9C6438'],['#E3C894','#C08A50'],['#F0DDB4','#A8734A']]);
+ return {R,cx,cy,px,py,B,N,i0,ln,tipo,anillos,Q,s:4.6,IC:[838,182],IR:150,phi,col:tA,grietas:Array.from({length:ri(r,26,40)},()=>[rf(r,0,6.283),rf(r,.3,1)])}}
+function cen(T,rad){const k=rad/T.R;return [T.px+(T.cx-T.px)*k,T.py+(T.cy-T.py)*k]}
+function zonaTronco(T,x,y){let z=null;for(let k=0;k<6;k++){const [a,b]=cen(T,T.B[k]);if(Math.hypot(x-a,y-b)<=T.B[k])z=PARTES[k]}return z}
+function zonaTroncoVis(T,x,y){const [ix,iy]=T.IC;if(Math.hypot(x-ix,y-iy)<=T.IR){return zonaTronco(T,T.Q[0]+(x-ix)/T.s,T.Q[1]+(y-iy)/T.s)}return zonaTronco(T,x,y)}
+function troncoCuerpo(T,fino){const C=(rad,fill,st,sw)=>{const [a,b]=cen(T,rad);return `<circle cx="${F(a)}" cy="${F(b)}" r="${F(rad)}" fill="${fill}" ${st?`stroke="${st}" stroke-width="${sw}"`:''}/>`};
+ let o=C(T.B[0],'#5A3A24','#3B2615',2);
+ for(const [a,l] of T.grietas){const [x0,y0]=cen(T,T.B[0]);const r1=T.B[0],r2=T.B[1]+(T.B[0]-T.B[1])*(1-l);o+=`<line x1="${F(x0+Math.cos(a)*r1)}" y1="${F(y0+Math.sin(a)*r1)}" x2="${F(x0+Math.cos(a)*r2)}" y2="${F(y0+Math.sin(a)*r2)}" stroke="#2E1D10" stroke-width="${fino?.5:1.6}"/>`}
+ o+=C(T.B[1],'#9A7148')+C(T.B[2],'#F4E7A6')+C(T.B[3],T.col[0])+C(T.B[4],T.col[1]);
+ /* anillos: la madera de primavera, clara; la de verano tardío, una línea más oscura */
+ const lw=fino?.5:2;
+ for(const ra of T.anillos){const dur=ra<=T.B[4],[a,b]=cen(T,ra-1.2);o+=`<circle cx="${F(a)}" cy="${F(b)}" r="${F(ra-1.4)}" fill="none" stroke="${dur?tono(T.col[1],.62):tono(T.col[0],.72)}" stroke-width="${lw}"/>`}
+ o+=C(T.B[5],'#5C3B22');return o}
+function troncoSvg(T,opt={}){let o=DEFS+fondo()+troncoCuerpo(T,false);
+ const [qx,qy]=T.Q,rr=T.IR/T.s;o+=`<circle cx="${F(qx)}" cy="${F(qy)}" r="${F(rr)}" fill="none" stroke="#C0392B" stroke-width="2.5"/><line x1="${F(qx+rr*.7)}" y1="${F(qy-rr*.7)}" x2="${F(T.IC[0]-T.IR*.72)}" y2="${F(T.IC[1]+T.IR*.72)}" stroke="#C0392B" stroke-width="2" stroke-dasharray="7 5"/>`;
+ o+=`<defs><clipPath id="clI"><circle cx="${T.IC[0]}" cy="${T.IC[1]}" r="${T.IR}"/></clipPath></defs><circle cx="${T.IC[0]}" cy="${T.IC[1]}" r="${T.IR+4}" fill="#fff"/><g clip-path="url(#clI)"><rect x="${T.IC[0]-T.IR}" y="${T.IC[1]-T.IR}" width="${T.IR*2}" height="${T.IR*2}" fill="#F4F1E8"/><g transform="translate(${T.IC[0]},${T.IC[1]}) scale(${T.s}) translate(${F(-qx)},${F(-qy)})">${troncoCuerpo(T,true)}</g></g><circle cx="${T.IC[0]}" cy="${T.IC[1]}" r="${T.IR}" fill="none" stroke="#C0392B" stroke-width="3"/>`+tx(T.IC[0],T.IC[1]+T.IR+30,'Detalle A (ampliado)',22,'middle','#C0392B');
+ if(opt.tramo){const i0=T.i0,i1=T.i0+T.ln-1,r0=i0>0?T.anillos[i0-1]:T.B[5],r1=T.anillos[i1],ph=T.phi,[c0x,c0y]=cen(T,r0),[c1x,c1y]=cen(T,r1),a=[c0x+Math.cos(ph)*r0,c0y+Math.sin(ph)*r0],b=[c1x+Math.cos(ph)*r1,c1y+Math.sin(ph)*r1];
+   o+=`<line x1="${F(a[0])}" y1="${F(a[1])}" x2="${F(b[0])}" y2="${F(b[1])}" stroke="#0B5FA5" stroke-width="7" stroke-linecap="round" opacity=".85"/>`;const lx=T.cx+Math.cos(ph)*(T.R+46),ly=T.cy+Math.sin(ph)*(T.R+46);o+=`<line x1="${F((a[0]+b[0])/2)}" y1="${F((a[1]+b[1])/2)}" x2="${F(lx)}" y2="${F(ly)}" stroke="#0B5FA5" stroke-width="2"/>`+`<rect x="${F(lx-62)}" y="${F(ly-20)}" width="124" height="36" fill="#0B5FA5" rx="4"/>`+tx(lx,ly+6,'Tramo B',22,'middle','#fff')}
+ if(opt.numera){T.anillos.forEach((ra,i)=>{if((i+1)%5&&i!==T.anillos.length-1)return;const ph=-Math.PI/2-.05,[a,b]=cen(T,ra-1.4);const x=a+Math.cos(ph)*(ra-1.4),y=b+Math.sin(ph)*(ra-1.4);o+=`<circle cx="${F(x)}" cy="${F(y)}" r="5" fill="#0B5FA5"/>`+tx(x+14,y-8,String(i+1),20,'start','#0B5FA5',700)})}
+ if(opt.marcas)o+=opt.marcas;return svgDe(o)}
+
+/* ---------- las tres secciones (diapositivas 13 y 14) ---------- */
+function seccionPat(tipo,x,y,w,h,r){const id='cs'+Math.floor(r()*1e9);let o=`<defs><clipPath id="${id}"><rect x="${x}" y="${y}" width="${w}" height="${h}"/></clipPath></defs><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#E6C996"/><g clip-path="url(#${id})" fill="none" stroke="#9C6A3C" stroke-width="2.4">`;
+ if(tipo==='transversal'){const cx=x+rf(r,-.2,1.2)*w,cy=y+h+rf(r,.1,.9)*h,dr=rf(r,11,17);for(let k=1;k<60;k++)o+=`<circle cx="${F(cx)}" cy="${F(cy)}" r="${F(k*dr+rf(r,-3,3))}"/>`}
+ else if(tipo==='radial'){let yy=y+rf(r,4,12);while(yy<y+h){o+=`<path d="M${x} ${F(yy)} L${x+w} ${F(yy+rf(r,-4,4))}"/>`;yy+=rf(r,9,17)}}
+ else{const yc=y+h*rf(r,.4,.6),xs=x+w*rf(r,.55,.85);for(let k=1;k<12;k++){const hk=k*rf(r,10,14),xt=xs-k*rf(r,16,24);o+=`<path d="M${x-5} ${F(yc-hk)} Q${F(xt+hk*1.2)} ${F(yc-hk)} ${F(xt+hk*1.6)} ${F(yc)} Q${F(xt+hk*1.2)} ${F(yc+hk)} ${x-5} ${F(yc+hk)}"/>`}}
+ return o+`</g><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#33413D" stroke-width="2.5"/>`}
+function seccionesSvg(orden,r){let o=fondo();orden.forEach((t,i)=>{const x=40+i*322,y=210;o+=seccionPat(t,x,y,270,280,r)+tx(x+135,y-24,'Pieza '+(i+1),28,'middle','#17201C',700)});return svgDe(o)}
+
+/* ---------- formas de despiezar el tronco (diapositiva 15) ---------- */
+function despieceSvg(tipo,r){const cx=500,cy=350,R=270,th=rf(r,0,3.14);let o=fondo()+`<circle cx="${cx}" cy="${cy}" r="${R+14}" fill="#5A3A24"/><circle cx="${cx}" cy="${cy}" r="${R}" fill="#E7CF9C"/>`;for(let k=1;k<14;k++)o+=`<circle cx="${cx}" cy="${cy}" r="${k*R/14}" fill="none" stroke="#C9A36E" stroke-width="1.5"/>`;
+ const L=(a,b,c,d)=>`<line x1="${F(a)}" y1="${F(b)}" x2="${F(c)}" y2="${F(d)}" stroke="#B3261E" stroke-width="4"/>`,ch=(t,ang)=>{const h=Math.sqrt(Math.max(0,R*R-t*t)),ux=Math.cos(ang),uy=Math.sin(ang),vx=-uy,vy=ux;return L(cx+vx*t+ux*h,cy+vy*t+uy*h,cx+vx*t-ux*h,cy+vy*t-uy*h)};
+ if(tipo==='paralelo'){const n=ri(r,6,9),d=2*R/(n+1);for(let k=1;k<=n;k++)o+=ch(-R+k*d,th)}
+ else if(tipo==='encuartonado'){o+=ch(0,th)+ch(0,th+Math.PI/2);const m=ri(r,2,3);for(let q=0;q<4;q++){const a=th+q*Math.PI/2,ux=Math.cos(a),uy=Math.sin(a),vx=Math.cos(a+Math.PI/2),vy=Math.sin(a+Math.PI/2),alt=q%2;for(let k=1;k<=m;k++){const t=k*R/(m+1);const [ax,ay]=alt?[ux,uy]:[vx,vy],[bx,by]=alt?[vx,vy]:[ux,uy];const p0=[cx+ax*t,cy+ay*t],len=Math.sqrt(R*R-t*t)-2;o+=L(p0[0],p0[1],p0[0]+bx*len,p0[1]+by*len)}}}
+ else{const n=ri(r,10,16);for(let k=0;k<n;k++){const a=th+k*6.283/n;o+=L(cx+Math.cos(a)*R*.12,cy+Math.sin(a)*R*.12,cx+Math.cos(a)*R,cy+Math.sin(a)*R)}}
+ return svgDe(o+`<circle cx="${cx}" cy="${cy}" r="6" fill="#5C3B22"/>`+tx(500,48,'Testa del tronco: las líneas rojas son los cortes de sierra',24))}
+
+/* ---------- pieza en perspectiva: cara, canto y testa (diapositiva 16) ---------- */
+function piezaGeo(L,A,G){const w=600,k=w/L,hc=Math.max(34,Math.min(120,G*k*3)),dp=Math.max(70,Math.min(190,A*k*2.2)),ang=-.52,dx=Math.cos(ang)*dp,dy=Math.sin(ang)*dp,x0=150,y0=470;
+ const p=(a,b)=>[x0+a,y0+b];return {cara:[p(0,0),p(w,0),p(w+dx,dy),p(dx,dy)],canto:[p(0,0),p(w,0),p(w,hc),p(0,hc)],testa:[p(w,0),p(w+dx,dy),p(w+dx,dy+hc),p(w,hc)],w,hc,dx,dy,x0,y0}}
+const poli=(P,fill,st='#33413D',sw=2.5)=>`<polygon points="${P.map(q=>F(q[0])+','+F(q[1])).join(' ')}" fill="${fill}" stroke="${st}" stroke-width="${sw}"/>`;
+function dentro(P,x,y){let c=false;for(let i=0,j=P.length-1;i<P.length;j=i++){const [xi,yi]=P[i],[xj,yj]=P[j];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))c=!c}return c}
+function piezaSvg(Pz,marcas=''){const g=piezaGeo(Pz.L,Pz.A,Pz.G);let o=DEFS+fondo()+poli(g.cara,'#EBD3A2')+poli(g.canto,'#DDBE86')+poli(g.testa,'#C99A5F');
+ for(let k=1;k<7;k++){const t=k/7,a=[g.cara[0][0]+g.dx*t,g.cara[0][1]+g.dy*t];o+=`<path d="M${F(a[0]+8)} ${F(a[1])} C${F(a[0]+200)} ${F(a[1]+(k%2?5:-5))} ${F(a[0]+400)} ${F(a[1]+(k%2?-4:4))} ${F(a[0]+g.w-8)} ${F(a[1])}" stroke="#B88A55" stroke-width="1.6" fill="none"/>`}
+ for(let k=1;k<4;k++){const y=g.y0+g.hc*k/4;o+=`<line x1="${g.x0+6}" y1="${F(y)}" x2="${g.x0+g.w-6}" y2="${F(y+(k-2)*2)}" stroke="#B88A55" stroke-width="1.4"/>`}
+ const tc=[g.x0+g.w+g.dx*.5,g.y0+g.dy*.5+g.hc*.5];o+=`<g clip-path="url(#clT)"><defs><clipPath id="clT">${poli(g.testa,'#000')}</clipPath></defs>`;for(let k=1;k<10;k++)o+=`<circle cx="${F(tc[0]-g.dx*.9)}" cy="${F(tc[1]+g.hc*1.6)}" r="${F(k*24)}" fill="none" stroke="#8E6438" stroke-width="1.6"/>`;o+='</g>';
+ o+=cota(g.x0,g.y0+g.hc,g.x0+g.w,g.y0+g.hc,Pz.L+' mm',34)+cota(g.x0+g.w,g.y0,g.x0+g.w+g.dx,g.y0+g.dy,Pz.A+' mm',-30)+cota(g.x0+g.w+g.dx,g.y0+g.dy,g.x0+g.w+g.dx,g.y0+g.dy+g.hc,Pz.G+' mm',-30);
+ return svgDe(o+marcas)}
+function zonaPieza(Pz,x,y){const g=piezaGeo(Pz.L,Pz.A,Pz.G);return dentro(g.cara,x,y)?'cara':dentro(g.canto,x,y)?'canto':dentro(g.testa,x,y)?'testa':null}
+
+/* ---------- humedad: balanzas y xilohigrómetro (diapositivas 18 y 19) ---------- */
+function balanza(x,y,g,tit){return `<g><rect x="${x-150}" y="${y}" width="300" height="70" rx="10" fill="#3B4B48"/><rect x="${x-170}" y="${y-14}" width="340" height="18" rx="6" fill="#59686A"/><rect x="${x-110}" y="${y-74}" width="220" height="58" fill="#D8B57E" stroke="#8E6438" stroke-width="2"/><line x1="${x-110}" y1="${y-55}" x2="${x+110}" y2="${y-52}" stroke="#B88A55" stroke-width="2"/><line x1="${x-110}" y1="${y-36}" x2="${x+110}" y2="${y-38}" stroke="#B88A55" stroke-width="2"/><rect x="${x-90}" y="${y+14}" width="180" height="44" fill="#0B1210"/>`+tx(x+80,y+47,g+' g',32,'end','#FF5A3C',600).replace('Barlow,Arial','IBM Plex Mono,monospace')+tx(x,y+112,tit,23,'middle','#17201C',600)+'</g>'}
+function pesosSvg(h,s){return svgDe(fondo()+tx(500,70,'La misma pieza, pesada dos veces',28,'middle','#17201C',700)+balanza(270,330,h,'Recién cortada')+balanza(730,330,s,'Seca del todo (estufa)'))}
+function xiloSvg(v){return svgDe(fondo()+`<rect x="150" y="430" width="700" height="90" fill="#D8B57E" stroke="#8E6438" stroke-width="3"/>${[1,2,3,4,5].map(k=>`<line x1="150" y1="${430+k*15}" x2="850" y2="${430+k*15+(k%2?3:-3)}" stroke="#B88A55" stroke-width="2"/>`).join('')}<rect x="390" y="190" width="220" height="190" rx="16" fill="#2E3B39"/><rect x="415" y="215" width="170" height="70" fill="#0B1210"/>${tx(570,268,String(v).replace('.',',')+' %',40,'end','#7CFF8A',600).replace('Barlow,Arial','IBM Plex Mono,monospace')}<line x1="460" y1="380" x2="460" y2="446" stroke="#9AA5A2" stroke-width="7"/><line x1="540" y1="380" x2="540" y2="446" stroke="#9AA5A2" stroke-width="7"/>`+tx(500,340,'Xilohigrómetro',22,'middle','#EEF3EC')+tx(500,90,'Lectura del medidor de humedad de púas',28,'middle','#17201C',700))}
+
+/* ---------- merma: testa de la tabla (diapositivas 21 a 23) ---------- */
+function mermaSvg(tipo,v){let o=DEFS+fondo();if(tipo==='longitudinal'){o+=`<rect x="100" y="300" width="800" height="80" fill="#E6C996" stroke="#33413D" stroke-width="2.5"/>`;for(let k=1;k<5;k++)o+=`<line x1="104" y1="${300+k*16}" x2="896" y2="${300+k*16+(k%2?3:-3)}" stroke="#B88A55" stroke-width="2"/>`;o+=cota(100,300,900,300,v+' mm de largo',-40)+tx(500,560,'Tabla vista de canto',24)}
+ else{const x=300,y=290,w=400,h=110;o+=`<defs><clipPath id="cm"><rect x="${x}" y="${y}" width="${w}" height="${h}"/></clipPath></defs><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#E6C996"/><g clip-path="url(#cm)" fill="none" stroke="#9C6A3C" stroke-width="3">`;
+  if(tipo==='tangencial'){for(let k=0;k<12;k++)o+=`<circle cx="500" cy="${y+h+900}" r="${880+k*22}"/>`}else{for(let k=0;k<14;k++)o+=`<line x1="${x+15+k*28}" y1="${y}" x2="${x+20+k*28}" y2="${y+h}"/>`}
+  o+=`</g><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#33413D" stroke-width="2.5"/>`+cota(x,y,x+w,y,v+' mm de ancho',-40)+tx(500,520,'Testa de la tabla (los anillos se ven en la testa)',24)}
+ return svgDe(o)}
+
+/* ---------- posición de la tabla en el tronco (diapositiva 21) ---------- */
+function posTablaSvg(t,r){const cx=500,cy=360,R=280,th=rf(r,0,6.283),d=t==='radial'?0:rf(r,90,150),bw=t==='radial'?2*R*.92:2*Math.sqrt(R*R-(d+36)**2)*.92,bh=58;let o=fondo()+`<circle cx="${cx}" cy="${cy}" r="${R+14}" fill="#5A3A24"/><circle cx="${cx}" cy="${cy}" r="${R}" fill="#E7CF9C"/>`;for(let k=1;k<15;k++)o+=`<circle cx="${cx}" cy="${cy}" r="${k*R/15}" fill="none" stroke="#B88A55" stroke-width="1.8"/>`;
+ const deg=th*180/Math.PI;o+=`<g transform="translate(${cx},${cy}) rotate(${F(deg)}) translate(0,${F(-d)})"><rect x="${F(-bw/2)}" y="${-bh/2}" width="${F(bw)}" height="${bh}" fill="rgba(11,95,165,.28)" stroke="#0B5FA5" stroke-width="4"/></g><circle cx="${cx}" cy="${cy}" r="8" fill="#5C3B22"/>`+tx(cx+16,cy+30,'médula',20,'start','#5C3B22');return svgDe(o+tx(500,40,'Tabla marcada en azul, vista en la testa del tronco',24))}
+
+/* ---------- tablas con defectos (diapositivas 31 a 34) ---------- */
+function vetaCara(x,y,w,h,r,col='#B88A55'){let o='';for(let k=1;k<8;k++){const yy=y+h*k/8;o+=`<path d="M${x+4} ${F(yy)} C${F(x+w*.3)} ${F(yy+rf(r,-6,6))} ${F(x+w*.65)} ${F(yy+rf(r,-6,6))} ${x+w-4} ${F(yy+rf(r,-3,3))}" stroke="${col}" stroke-width="1.8" fill="none"/>`}return o}
+function tablaSvg(def,r,ayuda){const x=50,y=130,w=730,h=190,tx0=x+w+55,cy=y+h+90;let o=DEFS+fondo()+tx(x,y-22,'Cara',22,'start','#55615B');const base='#E7CB97';
+ const nudo=(cx,cy,rx,ry,tipo)=>{let s='';if(tipo==='nsano'){s+=`<ellipse cx="${cx}" cy="${cy}" rx="${F(rx+16)}" ry="${F(ry+10)}" fill="none" stroke="#B88A55" stroke-width="2"/><ellipse cx="${cx}" cy="${cy}" rx="${F(rx)}" ry="${F(ry)}" fill="#B07A44"/><ellipse cx="${cx}" cy="${cy}" rx="${F(rx*.55)}" ry="${F(ry*.55)}" fill="none" stroke="#8E5E2E" stroke-width="2"/>`}else if(tipo==='nmuerto'){s+=`<ellipse cx="${cx}" cy="${cy}" rx="${F(rx+5)}" ry="${F(ry+5)}" fill="#2A1A0E"/><ellipse cx="${cx}" cy="${cy}" rx="${F(rx)}" ry="${F(ry)}" fill="#7A4E28"/><path d="M${F(cx-rx*.6)} ${F(cy-ry*.2)} L${F(cx+rx*.5)} ${F(cy+ry*.3)}" stroke="#2A1A0E" stroke-width="2"/>`}else{s+=`<ellipse cx="${cx}" cy="${cy}" rx="${F(rx+18)}" ry="${F(ry+12)}" fill="#8C6A4A" opacity=".55"/><ellipse cx="${cx}" cy="${cy}" rx="${F(rx+4)}" ry="${F(ry+3)}" fill="#3A2716"/>`;for(let i=0;i<14;i++)s+=`<circle cx="${F(cx+rf(r,-rx,rx))}" cy="${F(cy+rf(r,-ry,ry))}" r="${F(rf(r,2,5))}" fill="#1A1008"/>`}return s};
+ /* cara arriba, canto debajo y testa a la derecha, alineada con la cara */
+ let cara=`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${base}" stroke="#33413D" stroke-width="2.5"/>`,extra='',canto=`<rect x="${x}" y="${cy}" width="${w}" height="34" fill="#DDBE86" stroke="#33413D" stroke-width="2.5"/>`,testa=`<rect x="${tx0}" y="${y}" width="34" height="${h}" fill="#C99A5F" stroke="#33413D" stroke-width="2.5"/>`,regla='',zona=null;
+ const nx=x+rf(r,.25,.75)*w,ny=y+rf(r,.3,.7)*h;
+ if(def==='nsano'||def==='nmuerto'||def==='npod'){extra=nudo(F(nx),F(ny),rf(r,16,24),rf(r,12,18),def);zona=[nx,ny,60]}
+ else if(def==='fenda'){const izq=r()<.5,ex=izq?x:x+w;for(let i=0;i<3;i++){const yy=y+h*(.25+i*.25)+rf(r,-10,10),ln=rf(r,70,160);extra+=`<path d="M${ex} ${F(yy)} L${F(ex+(izq?1:-1)*ln*.5)} ${F(yy+rf(r,-4,4))} L${F(ex+(izq?1:-1)*ln)} ${F(yy+rf(r,-2,2))}" stroke="#2A1A0E" stroke-width="${F(rf(r,2.5,4))}" fill="none"/>`}
+   zona=[izq?x+70:x+w-70,y+h/2,110];if(!izq)testa+=`<path d="M${tx0+17} ${y+6} L${tx0+20} ${y+h*.45} L${tx0+15} ${y+h-6}" stroke="#2A1A0E" stroke-width="3" fill="none"/>`}
+ else if(def==='resina'){extra=`<ellipse cx="${F(nx)}" cy="${F(ny)}" rx="${F(rf(r,40,70))}" ry="${F(rf(r,7,10))}" fill="#C27A16"/><ellipse cx="${F(nx-6)}" cy="${F(ny-2)}" rx="20" ry="3" fill="#F6C66A"/>`;zona=[nx,ny,85]}
+ else if(def==='medula'){const yy=y+rf(r,.35,.65)*h;extra=`<path d="M${x} ${F(yy)} C${x+w*.3} ${F(yy+4)} ${x+w*.6} ${F(yy-4)} ${x+w} ${F(yy+2)}" stroke="#5C3B22" stroke-width="6" fill="none"/>`;for(let i=0;i<5;i++){const xx=x+rf(r,.1,.9)*w;extra+=`<path d="M${F(xx)} ${F(yy-3)} L${F(xx+8)} ${F(yy-16)}" stroke="#2A1A0E" stroke-width="2"/>`}
+   testa+=`<g fill="none" stroke="#8E6438" stroke-width="1.5">${[10,20,30,42].map(k=>`<circle cx="${tx0+17}" cy="${F(yy)}" r="${k}"/>`).join('')}</g><circle cx="${tx0+17}" cy="${F(yy)}" r="5" fill="#5C3B22"/><rect x="${tx0}" y="${y}" width="34" height="${h}" fill="none" stroke="#33413D" stroke-width="2.5"/>`;testa=`<defs><clipPath id="ctm"><rect x="${tx0}" y="${y}" width="34" height="${h}"/></clipPath></defs><g clip-path="url(#ctm)">${testa}</g>`;zona=[x+w/2,yy,0,'linea']}
+ else if(def==='canto'){const b=rf(r,22,34);cara=`<path d="M${x} ${y} Q${x+w/2} ${F(y-2*b)} ${x+w} ${y} L${x+w} ${y+h} Q${x+w/2} ${F(y+h-2*b)} ${x} ${y+h} Z" fill="${base}" stroke="#33413D" stroke-width="2.5"/>`;regla=`<line x1="${x-20}" y1="${y+h}" x2="${x+w+20}" y2="${y+h}" stroke="#0B5FA5" stroke-width="5"/>`+tx(x+w/2,y+h+28,'regla',20,'middle','#0B5FA5');zona=[x+w/2,y+h-b,120]}
+ else if(def==='cara'){const b=rf(r,16,24);canto=`<path d="M${x} ${cy} Q${x+w/2} ${F(cy-2*b)} ${x+w} ${cy} L${x+w} ${cy+34} Q${x+w/2} ${F(cy+34-2*b)} ${x} ${cy+34} Z" fill="#DDBE86" stroke="#33413D" stroke-width="2.5"/>`;regla=`<line x1="${x-20}" y1="${cy+34}" x2="${x+w+20}" y2="${cy+34}" stroke="#0B5FA5" stroke-width="5"/>`+tx(x+w/2,cy+62,'regla',20,'middle','#0B5FA5');zona=[x+w/2,cy+10,110]}
+ else if(def==='abarq'){const b=rf(r,14,20);testa=`<path d="M${tx0} ${y} Q${F(tx0+2*b)} ${y+h/2} ${tx0} ${y+h} L${tx0+34} ${y+h} Q${F(tx0+34+2*b)} ${y+h/2} ${tx0+34} ${y} Z" fill="#C99A5F" stroke="#33413D" stroke-width="2.5"/>`;regla=`<line x1="${tx0}" y1="${y-14}" x2="${tx0}" y2="${y+h+14}" stroke="#0B5FA5" stroke-width="4"/>`;zona=[tx0+20,y+h/2,90]}
+ else if(def==='alabeo'){const a=rf(r,10,16);testa=`<rect x="${tx0}" y="${y}" width="34" height="${h}" fill="#C99A5F" stroke="#33413D" stroke-width="2.5"/>`+tx(tx0+17,y+h+28,'izquierda',19)+`<g transform="rotate(${F(a)} ${tx0+97} ${y+h/2})"><rect x="${tx0+80}" y="${y}" width="34" height="${h}" fill="#C99A5F" stroke="#33413D" stroke-width="2.5"/></g><line x1="${tx0+97}" y1="${y-14}" x2="${tx0+97}" y2="${y+h+14}" stroke="#0B5FA5" stroke-width="3" stroke-dasharray="6 5"/>`+tx(tx0+97,y+h+50,'derecha',19);zona=[tx0+60,y+h/2,100,'izq']}
+ o+=cara+`<g>${vetaCara(x,y,w,h,r)}</g>`+extra+tx(x,cy-14,'Canto',22,'start','#55615B')+canto+tx(def==='alabeo'?tx0+57:tx0+17,y-22,def==='alabeo'?'Testas':'Testa',22,'middle','#55615B')+testa+regla;
+ if(ayuda&&zona){o+=zona[3]==='linea'?`<rect x="${x-10}" y="${F(zona[1]-26)}" width="${w+20}" height="52" fill="none" stroke="#C0392B" stroke-width="4" stroke-dasharray="10 6"/>`+tx(x+w/2,zona[1]-34,'Mira aquí',24,'middle','#C0392B',700):`<circle cx="${F(zona[0])}" cy="${F(zona[1])}" r="${zona[2]}" fill="none" stroke="#C0392B" stroke-width="4" stroke-dasharray="10 6"/>`+(zona[3]==='izq'?tx(zona[0]-zona[2]-12,zona[1]+8,'Mira aquí',24,'end','#C0392B',700):tx(zona[0],zona[1]-zona[2]-12,'Mira aquí',24,'middle','#C0392B',700))}
+ return svgDe(o)}
+
+/* ---------- alistonado: listones vistos por la testa (diapositivas 35 y 36) ---------- */
+function listonesSvg(est,res){const n=est.length,w=Math.min(110,800/n),h=90,x0=500-n*w/2,y0=300;let o=fondo()+tx(500,80,'Tablero alistonado visto por la testa',28,'middle','#17201C',700)+tx(500,118,'Pulsa un listón para voltearlo',22,'middle','#55615B');
+ est.forEach((up,i)=>{const x=x0+i*w,cy=up?y0+h+w*1.1:y0-w*1.1;o+=`<g data-l="${i}" style="cursor:pointer"><defs><clipPath id="li${i}"><rect x="${F(x)}" y="${y0}" width="${F(w)}" height="${h}"/></clipPath></defs><rect x="${F(x)}" y="${y0}" width="${F(w)}" height="${h}" fill="#E6C996"/><g clip-path="url(#li${i})" fill="none" stroke="#9C6A3C" stroke-width="2.6">${[0,1,2,3,4,5,6,7].map(k=>`<circle cx="${F(x+w/2)}" cy="${F(cy)}" r="${F(w*1.1-h*.15+k*16)}"/>`).join('')}</g><rect x="${F(x)}" y="${y0}" width="${F(w)}" height="${h}" fill="none" stroke="#33413D" stroke-width="2.5"/>${tx(x+w/2,y0+h+38,String(i+1),22,'middle','#55615B')}</g>`});
+ if(res){const ok=res==='ok';o+=ok?`<path d="M${x0} 520 L${x0+n*w} 520" stroke="#1E9E5A" stroke-width="8"/>`+tx(500,570,'Queda plano: los movimientos se compensan',24,'middle','#1E7A47',700):`<path d="M${x0} 520 Q500 ${est[0]?470:570} ${x0+n*w} 520" stroke="#B3261E" stroke-width="8" fill="none"/>`+tx(500,600,'Se abarquilla: los movimientos se suman',24,'middle','#B3261E',700)}
+ return svgDe(o)}
+
+/* ---------- muestras de tablero en perspectiva (diapositivas 50 a 56) ---------- */
+function particulas(x,y,w,h,r,cols,tam,n){let o='';for(let i=0;i<n;i++){const px=x+r()*w,py=y+r()*h,s=rf(r,tam*.5,tam*1.2),a=rf(r,0,6.28);o+=`<rect x="${F(px)}" y="${F(py)}" width="${F(s*1.8)}" height="${F(s*.7)}" fill="${pick(r,cols)}" transform="rotate(${F(a*57)} ${F(px)} ${F(py)})"/>`}return o}
+function muestra(m,r,revCol){/* m: {t,g,n,k,rev} */const W=600,ang=-.5,dp=240,dx=Math.cos(ang)*dp,dy=Math.sin(ang)*dp,h=Math.max(30,Math.min(170,26+m.g*3.6)),x0=150,y0=360-h/2+60;
+ const cara=[[x0,y0],[x0+W,y0],[x0+W+dx,y0+dy],[x0+dx,y0+dy]],fr=[[x0,y0],[x0+W,y0],[x0+W,y0+h],[x0,y0+h]],ld=[[x0+W,y0],[x0+W+dx,y0+dy],[x0+W+dx,y0+dy+h],[x0+W,y0+h]];
+ const t=m.t,id='m'+Math.floor(r()*1e9),MT=[dx/W,dy/W,0,1,x0+W-x0*dx/W,-x0*dy/W].map(v=>v.toFixed(5)).join(',');let o=DEFS+fondo();const clip=(P,n)=>`<clipPath id="${id+n}">${poli(P,'#000','none',0)}</clipPath>`;o+=`<defs>${clip(cara,'c')}${clip(fr,'f')}${clip(ld,'l')}</defs>`;
+ const col={aglo:['#C9A46A','#B38B52','#D9B985','#A27A45'],aglohi:['#8FA866','#C9A46A','#7E9A57','#B38B52'],aglocd:['#C9A46A','#B38B52','#D9B985']}[t]||null;
+ let fC='',fF='',fL='';
+ const capasFL=(cb)=>{fF+=cb(x0,y0,W,h,'f');fL+=`<g transform="matrix(${MT})">${cb(x0,y0,W,h,'l')}</g>`};
+ if(t==='aglo'||t==='aglohi'||t==='mela'||t==='aglocd'){const c=t==='mela'?['#C9A46A','#B38B52','#D9B985','#A27A45']:col;capasFL((x,y,w,hh,s)=>{let q=`<rect x="${x}" y="${y}" width="${w}" height="${hh}" fill="${c[0]}"/>`;if(t==='aglocd'){const e=hh*.2;q+=particulas(x,y+e,w,hh-2*e,r,c,7,Math.round(w*hh/50))+particulas(x,y,w,e,r,['#D9B985','#E4C79A'],2.5,Math.round(w*e/6))+particulas(x,y+hh-e,w,e,r,['#D9B985','#E4C79A'],2.5,Math.round(w*e/6))}else q+=particulas(x,y,w,hh,r,c,5.5,Math.round(w*hh/30));return q});
+   fC=`<rect x="0" y="0" width="${VW}" height="${VH}" fill="${c[2]}"/>`+particulas(x0,y0+dy,W+dx,-dy,r,c,4,1400)}
+ else if(t==='dm'||t==='dmhi'||t==='dmig'||t==='tablex'){const c={dm:'#B08A5E',dmhi:'#6F9A58',dmig:'#B4574A',tablex:'#6B4A2E'}[t];capasFL((x,y,w,hh)=>`<rect x="${x}" y="${y}" width="${w}" height="${hh}" fill="${c}"/>`+particulas(x,y,w,hh,r,[tono(c,.9),tono(c,1.08)],1.4,Math.round(w*hh/40)));fC=`<rect x="0" y="0" width="${VW}" height="${VH}" fill="${tono(c,1.12)}"/>`}
+ else if(t==='osb'){capasFL((x,y,w,hh)=>{let q=`<rect x="${x}" y="${y}" width="${w}" height="${hh}" fill="#C79A55"/>`;const nc=Math.max(3,Math.round(hh/12));for(let k=0;k<nc;k++){const yy=y+k*hh/nc;for(let i=0;i<w/18;i++)q+=`<rect x="${F(x+r()*w)}" y="${F(yy+r()*hh/nc)}" width="${F(k%2?rf(r,8,14):rf(r,26,48))}" height="${F(rf(r,2,4))}" fill="${pick(r,['#A97B3A','#DDB46F','#8C6228'])}"/>`}return q});
+   fC=`<rect x="0" y="0" width="${VW}" height="${VH}" fill="#D3A85F"/>`;for(let i=0;i<260;i++){const px=rf(r,x0-20,x0+W+dx),py=rf(r,y0+dy-20,y0+10),a=rf(r,-.35,.35)+(r()<.25?1.5:0);fC+=`<rect x="${F(px)}" y="${F(py)}" width="${F(rf(r,40,90))}" height="${F(rf(r,12,22))}" fill="${pick(r,['#B98A48','#E2BE7E','#A06F33','#CFA25C'])}" stroke="#8C6228" stroke-width=".8" transform="rotate(${F(a*57)} ${F(px)} ${F(py)})"/>`}}
+ else if(t==='contra'){const n=m.n;capasFL((x,y,w,hh,s)=>{let q='';for(let k=0;k<n;k++){const yy=y+k*hh/n,hk=hh/n,largo=(k%2===0)===(s==='f');q+=`<rect x="${x}" y="${F(yy)}" width="${w}" height="${F(hk)}" fill="${k%2?'#D9B98A':'#E8CDA0'}" stroke="#7A5A34" stroke-width="1.2"/>`;if(largo)q+=`<line x1="${x}" y1="${F(yy+hk/2)}" x2="${x+w}" y2="${F(yy+hk/2)}" stroke="#B88A55" stroke-width="1.2"/>`;else for(let i=0;i<w/9;i++)q+=`<circle cx="${F(x+4+i*9+rf(r,-1.5,1.5))}" cy="${F(yy+hk/2)}" r="${F(Math.min(2.2,hk/3))}" fill="#9C6A3C"/>`}return q});
+   fC=`<rect x="0" y="0" width="${VW}" height="${VH}" fill="#E8CDA0"/>`;for(let k=0;k<14;k++){const yy=y0+dy*(k+.5)/14;fC+=`<path d="M${F(x0+dx*(k+.5)/14)} ${F(yy)} C${F(x0+250)} ${F(yy+rf(r,-5,5))} ${F(x0+450)} ${F(yy+rf(r,-5,5))} ${F(x0+W+dx*(k+.5)/14)} ${F(yy)}" stroke="#B88A55" stroke-width="1.6" fill="none"/>`}}
+ else if(t==='alis'||t==='alisr'){const k=m.k,ch=t==='alisr'?Math.max(3,h*.06):0,cs=['#E6C996','#D8B47A','#EBD3A6','#CFA86E'];
+   fF=`<rect x="${x0}" y="${y0}" width="${W}" height="${h}" fill="#DDBE86"/>`;for(let i=1;i<4;i++)fF+=`<line x1="${x0}" y1="${F(y0+ch+(h-2*ch)*i/4)}" x2="${x0+W}" y2="${F(y0+ch+(h-2*ch)*i/4+rf(r,-2,2))}" stroke="#B88A55" stroke-width="1.6"/>`;
+   let li='';for(let i=0;i<k;i++){const lw=W/k,xx=x0+i*lw,up=i%2===0,cy=up?y0+h+lw*.9:y0-lw*.9;li+=`<defs><clipPath id="${id}t${i}"><rect x="${F(xx)}" y="${F(y0+ch)}" width="${F(lw)}" height="${F(h-2*ch)}"/></clipPath></defs><rect x="${F(xx)}" y="${F(y0+ch)}" width="${F(lw)}" height="${F(h-2*ch)}" fill="${cs[i%4]}" stroke="#7A5A34" stroke-width="1.5"/><g clip-path="url(#${id}t${i})" fill="none" stroke="#9C6A3C" stroke-width="2">${[0,1,2,3,4,5].map(j=>`<circle cx="${F(xx+lw/2)}" cy="${F(cy)}" r="${F(lw*.9-h*.1+j*14)}"/>`).join('')}</g>`}
+   if(ch)li+=`<rect x="${x0}" y="${y0}" width="${W}" height="${F(ch)}" fill="#F2DDB5" stroke="#7A5A34" stroke-width="1"/><rect x="${x0}" y="${F(y0+h-ch)}" width="${W}" height="${F(ch)}" fill="#F2DDB5" stroke="#7A5A34" stroke-width="1"/>`;
+   fL=`<g transform="matrix(${MT})">${li}</g>`;
+   if(t==='alis'){fC='';for(let i=0;i<k;i++){const a=i/k,b=(i+1)/k;fC+=poli([[x0+dx*a,y0+dy*a],[x0+W+dx*a,y0+dy*a],[x0+W+dx*b,y0+dy*b],[x0+dx*b,y0+dy*b]],cs[i%4],'#7A5A34',1.2);for(let j=1;j<4;j++){const c=a+(b-a)*j/4;fC+=`<line x1="${F(x0+dx*c+4)}" y1="${F(y0+dy*c)}" x2="${F(x0+W+dx*c-4)}" y2="${F(y0+dy*c+rf(r,-3,3))}" stroke="#B88A55" stroke-width="1.3"/>`}}}
+   else{fC=`<rect x="0" y="0" width="${VW}" height="${VH}" fill="#F2DDB5"/>`;for(let j=0;j<22;j++){const c=(j+.5)/22;fC+=`<path d="M${F(x0+dx*c)} ${F(y0+dy*c)} C${F(x0+220+dx*c)} ${F(y0+dy*c+rf(r,-4,4))} ${F(x0+420+dx*c)} ${F(y0+dy*c+rf(r,-4,4))} ${F(x0+W+dx*c)} ${F(y0+dy*c)}" stroke="#D2AE78" stroke-width="1.3" fill="none"/>`}}}
+ /* revestimientos */
+ let capaSup='';if(t==='mela'||m.rev){const rv=m.rev||'rmela',cc=revCol||'#F4F4F0',e=rv==='rhpl'?Math.max(6,h*.12):rv==='rlaca'?Math.max(5,h*.09):Math.max(3,h*.045);
+   const capa=(x,y,w)=>rv==='rhpl'?[0,1,2,3].map(k=>`<rect x="${x}" y="${F(y+k*e/5)}" width="${w}" height="${F(e/5)}" fill="${k%2?'#5B4027':'#7A5634'}"/>`).join('')+`<rect x="${x}" y="${F(y+e*.8)}" width="${w}" height="${F(e*.2)}" fill="${cc}"/>`:`<rect x="${x}" y="${F(y)}" width="${w}" height="${F(e)}" fill="${rv==='rchapa'?'#E9C994':cc}" stroke="#55615B" stroke-width=".6"/>`;
+   capaSup=capa(x0,y0,W)+(rv==='rhpl'||rv==='rlaca'?'':capa(x0,y0+h-e,W))+`<g transform="matrix(${MT})">${capa(x0,y0,W)}${rv==='rhpl'||rv==='rlaca'?'':capa(x0,y0+h-e,W)}</g>`;
+   if(rv==='rlaca')capaSup+=`<rect x="${x0}" y="${y0}" width="${W}" height="${h}" fill="${cc}" opacity=".93"/><g transform="matrix(${MT})"><rect x="${x0}" y="${y0}" width="${W}" height="${h}" fill="${tono(cc,.85)}" opacity=".93"/></g>`;
+   if(rv==='rchapa'){fC=`<rect x="0" y="0" width="${VW}" height="${VH}" fill="#E9C994"/>`;for(let j=0;j<24;j++){const c=(j+.5)/24;fC+=`<path d="M${F(x0+dx*c)} ${F(y0+dy*c)} C${F(x0+200+dx*c)} ${F(y0+dy*c+rf(r,-6,6))} ${F(x0+400+dx*c)} ${F(y0+dy*c+rf(r,-6,6))} ${F(x0+W+dx*c)} ${F(y0+dy*c)}" stroke="#C49A5C" stroke-width="1.5" fill="none"/>`}}
+   else if(rv==='rlaca'||rv==='rmela'||rv==='rhpl')fC=`<rect x="0" y="0" width="${VW}" height="${VH}" fill="${cc}"/>`+(rv==='rlaca'?poli([[x0+40,y0-6],[x0+260,y0-6],[x0+260+dx*.4,y0+dy*.4-6],[x0+40+dx*.4,y0+dy*.4-6]],'rgba(255,255,255,.35)','none',0):'')}
+ o+=`<g clip-path="url(#${id}c)">${fC}</g>`+poli(cara,'none')+`<g clip-path="url(#${id}f)">${fF}</g><g clip-path="url(#${id}l)">${fL}</g>`+capaSup+poli(fr,'none')+poli(ld,'none');
+ if(t==='tablex'){o+=`<g transform="translate(700,560)"><rect x="-120" y="-50" width="240" height="100" fill="#5E3F25"/>`;for(let i=0;i<40;i++)for(let j=0;j<14;j++)o+=`<rect x="${-118+i*6}" y="${-48+j*7}" width="3" height="3" fill="#4A301B"/>`;o+=`</g>`+tx(700,640,'Cara de abajo',20,'middle','#55615B')}
+ o+=cota(x0,y0,x0,y0+h,m.g+' mm',30);
+ if(m.rev){const bx=40,by=40,bw=300,bh=150,e=m.rev==='rhpl'?34:m.rev==='rlaca'?24:14;o+=`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" fill="#fff" stroke="#C0392B" stroke-width="2.5"/>`+tx(bx+bw/2,by+bh+26,'Detalle del canto, ampliado',19,'middle','#C0392B');const base=m.base==='dm'?'#B08A5E':'#C9A46A';o+=`<rect x="${bx+10}" y="${by+10+e}" width="${bw-20}" height="${bh-20-e}" fill="${base}"/>`+(m.base==='dm'?'':particulas(bx+10,by+10+e,bw-20,bh-20-e,r,['#B38B52','#D9B985','#A27A45'],8,140));
+   if(m.rev==='rhpl')o+=[0,1,2,3,4].map(k=>`<rect x="${bx+10}" y="${by+10+k*e/6}" width="${bw-20}" height="${F(e/6)}" fill="${k%2?'#5B4027':'#7A5634'}"/>`).join('')+`<rect x="${bx+10}" y="${by+10+e*5/6}" width="${bw-20}" height="${F(e/6)}" fill="${revCol}"/>`;
+   else if(m.rev==='rchapa'){o+=`<rect x="${bx+10}" y="${by+10}" width="${bw-20}" height="${e}" fill="#E9C994"/>`;for(let i=0;i<30;i++)o+=`<circle cx="${bx+14+i*9.4}" cy="${by+10+e/2}" r="1.8" fill="#9C6A3C"/>`}
+   else o+=`<rect x="${bx+10}" y="${by+10}" width="${bw-20}" height="${e}" fill="${revCol}" stroke="#55615B" stroke-width="1"/>`;
+   if(m.rev==='rlaca')o+=`<rect x="${bx+bw-24}" y="${by+10}" width="14" height="${bh-20}" fill="${revCol}"/>`}
+ return svgDe(o)}
+
+/* ---------- el mueble del encargo, con sus piezas numeradas ---------- */
+function muebleSvg(E){let o=fondo()+tx(500,48,E.n,30,'middle','#17201C',700);const R=(x,y,w,h,f='#E9E2D2')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${f}" stroke="#33413D" stroke-width="3"/>`,nc=(x,y,n)=>`<circle cx="${x}" cy="${y}" r="19" fill="#1C2B28"/>`+tx(x,y+8,String(n),22,'middle','#fff',700);
+ const OC={bano:[4,5],mostrador:[3,4],armario:[3,4],cocina:[4],oficina:[4],aparador:[4,5],estanteria:[3]}[E.id]||[];if(OC.length){let x=500-OC.length*130;o+=tx(500,632,'No se ven desde delante:',21,'middle','#55615B');OC.forEach((n,i)=>{const cx=x+i*260+40;o+=nc(cx,670,n)+tx(cx+28,678,E.pz[n-1][0],20,'start','#17201C',600)})}
+ const P={
+  bano:()=>R(250,180,500,40,'#BFC6C1')+R(250,220,30,260,'#E9E2D2')+R(720,220,30,260)+R(280,220,220,260,'#6FA66B')+R(500,220,220,260,'#6FA66B')+R(280,480,440,24)+nc(500,200,3)+nc(265,350,1)+nc(390,350,2)+nc(610,350,2),
+  mostrador:()=>R(150,200,700,46,'#8C9792')+R(170,246,660,300,'#C0392B')+nc(500,223,2)+nc(500,400,1),
+  armario:()=>R(200,80,600,500,'#F2F2EE')+R(205,85,290,330,'#FAFAF8')+R(505,85,290,330,'#FAFAF8')+R(205,420,590,75,'#FAFAF8')+R(205,500,590,75,'#FAFAF8')+nc(350,250,1)+nc(650,250,1)+nc(500,458,5)+nc(500,538,5)+nc(200,300,2),
+  cocina:()=>R(220,200,560,40,'#8C9792')+R(220,240,30,300)+R(750,240,30,300)+R(250,240,250,300,'#9AA2A0')+R(500,240,250,300,'#9AA2A0')+nc(500,220,3)+nc(235,390,1)+nc(375,390,2)+nc(625,390,2),
+  oficina:()=>R(140,220,720,36,'#D6D2C6')+R(160,256,500,70,'#2F6F8F')+R(680,256,160,300)+R(690,300,140,70)+nc(500,238,1)+nc(410,291,2)+nc(760,450,3),
+  jardin:()=>R(180,200,420,40,'#B5793F')+R(200,240,30,260,'#A86A35')+R(550,240,30,260,'#A86A35')+R(640,330,240,30,'#B5793F')+R(650,360,24,140,'#A86A35')+R(846,360,24,140,'#A86A35')+R(160,540,300,110,'#C9A46A')+nc(390,220,1)+nc(215,370,2)+nc(760,345,3)+nc(310,595,4),
+  silla:()=>`<path d="M380 140 Q500 110 620 140 L620 175 Q500 145 380 175 Z" fill="#E2BE8A" stroke="#33413D" stroke-width="3"/>`+R(380,170,26,470,'#E2BE8A')+R(594,170,26,470,'#E2BE8A')+R(380,380,240,30,'#D2AE78')+R(406,520,188,20,'#1F1F1F')+nc(500,128,1)+nc(393,600,2)+nc(607,600,2)+nc(500,530,3)+tx(500,680,'El asiento no forma parte del encargo',20,'middle','#55615B'),
+  aparador:()=>R(160,170,680,36,'#C49A5C')+R(160,206,30,330,'#C49A5C')+R(810,206,30,330,'#C49A5C')+R(190,206,310,240,'#D8B47A')+R(500,206,310,240,'#D8B47A')+R(190,446,620,90,'#D8B47A')+nc(500,188,2)+nc(345,326,1)+nc(655,326,1)+nc(175,380,3),
+  estanteria:()=>R(240,110,30,540,'#1F1F1F')+R(730,110,30,540,'#1F1F1F')+[180,330,480,620].map(y=>R(270,y,460,28,'#D3A85F')).join('')+nc(500,194,1)+nc(255,420,2)+nc(745,420,2),
+  barca:()=>`<path d="M120 300 L880 300 L800 560 L200 560 Z" fill="#DDE3E0" stroke="#33413D" stroke-width="3"/>`+R(260,350,480,30,'#D8B47A')+R(320,470,360,30,'#D8B47A')+R(150,270,120,20,'#A86A35')+R(730,270,120,20,'#A86A35')+nc(500,365,1)+nc(210,280,2)+nc(500,485,3),
+ };return svgDe(o+(P[E.id]?P[E.id]():''))}
+
+/* ====================================================================
+   FASES: cada alumno e intento recibe su propio caso (semilla nombre#intento#fase)
+   ==================================================================== */
+const normal=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').trim().toUpperCase().replace(/\s+/g,' ');
+function semilla(n){let h=2166136261;for(const c of normal(n)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+const rngDe=(nom,int,f)=>RNG(semilla(nom+'#'+int+'#'+f));
+const coma=(v,d=2)=>Number(v).toFixed(d).replace('.',',');
+const n1=v=>String(Math.round(v*100000)/100000).replace('.',',');
+function opsCon(r,ok,malas,n=4){const o=baraja(r,[ok,...baraja(r,malas.filter(m=>m!==ok)).slice(0,n-1)]);return {ops:o,sol:o.indexOf(ok)}}
+
+/* ---------- calentamiento ---------- */
+function calSvg(){const bar=(x,y,w,c,v,t)=>`<rect x="${x}" y="${y}" width="${F(w)}" height="44" fill="${c}"/>`+tx(x+w+10,y+31,v,24,'start','#17201C',700)+tx(x-12,y+31,t,21,'end','#55615B');const k=.36;
+ return svgDe(fondo()+tx(500,62,'Emisiones de CO₂ (kg de CO₂ por m² construido)',28,'middle','#17201C',700)+tx(500,96,'Edificio de 4 plantas y 32 viviendas',20,'middle','#55615B',500)+tx(70,170,'Fabricación de los materiales',23,'start','#17201C',700)+bar(300,190,293*k,'#5B8C3A','293','Madera')+bar(300,244,600*k,'#8C9792','600','Convencional')+tx(70,360,'Ciclo completo (50 años)',23,'start','#17201C',700)+bar(300,380,1279*k,'#5B8C3A','1279','Madera')+bar(300,434,1554*k,'#8C9792','1554','Convencional')+tx(500,560,'Menos de la mitad de CO₂ al fabricar · −40 % de energía · −75 % de contaminación tóxica',21,'middle','#17201C',600)+tx(500,640,'Fuente: FSC España (2018). En madera, otra forma de construir (estudio de Wadel, 2009).',18,'middle','#55615B',500))}
+function genCal(r){const L=baraja(r,CAL).slice(0,5),VF=['Verdadero','Falso','Depende'];
+ return [{t:'demo',tit:'Calentamiento',html:`<p class="enun">Antes de empezar, un repaso rápido: <b>la madera como material del futuro</b>. Responde si cada frase es verdadera o falsa.</p><p class="ins">Esta parte <b>no cuenta para la nota</b>: responde y lee la explicación.</p>`,vis:()=>({svg:calSvg(),tit:'La madera como material del futuro'})},
+ ...L.map(([f,s,e])=>({t:'elige',libre:true,tit:'¿Verdadero o falso?',enun:`<b>«${esc(f)}»</b>`,ops:VF,fijo:true,sol:'VFD'.indexOf(s),exp:e,vis:()=>({svg:calSvg(),tit:'La madera como material del futuro'})}))]}
+
+/* ---------- fase 1: el tronco ---------- */
+const DESC_PARTE={corteza:'La corteza es la capa exterior que protege el árbol; se elimina siempre.',liber:'El líber es la capa interior de la corteza, por donde baja la savia elaborada: va justo por dentro de la corteza.',camb:'El cámbium es la capa muy fina entre el líber y la albura que genera cada año madera nueva. Búscala en el detalle A.',albura:'La albura es la madera joven y clara que conduce la savia, entre el cámbium y el duramen.',duramen:'El duramen es la madera madura, más oscura, dura y durable, en el centro del tronco.',medula:'La médula es el punto central del tronco, blando, del que salen los anillos.'};
+function marcasEtq(pl,nombres){let o='';for(const id in pl){const [x,y]=pl[id],t=nombres[id],w=t.length*11+22,lx=x+(x>700?-w-26:26),ly=y-34;o+=`<line x1="${F(x)}" y1="${F(y)}" x2="${F(lx+(x>700?w:0))}" y2="${F(ly+14)}" stroke="#1E7A47" stroke-width="2.5"/><circle cx="${F(x)}" cy="${F(y)}" r="7" fill="#1E9E5A" stroke="#fff" stroke-width="2"/><rect x="${F(lx)}" y="${F(ly)}" width="${w}" height="30" rx="4" fill="#1E9E5A"/>`+tx(lx+w/2,ly+22,t,20,'middle','#fff',700)}return o}
+function leyendaTronco(T){let o='';PARTES.forEach((id,k)=>{const [px,py]=centroZona(T,id),lx=742,ly=410+k*46,t=NPARTE[id];o+=`<line x1="${F(px)}" y1="${F(py)}" x2="${lx}" y2="${ly+15}" stroke="#1E7A47" stroke-width="2"/><circle cx="${F(px)}" cy="${F(py)}" r="6" fill="#1E9E5A" stroke="#fff" stroke-width="2"/><rect x="${lx}" y="${ly}" width="150" height="30" rx="4" fill="#1E9E5A"/>`+tx(lx+75,ly+22,t,20,'middle','#fff',700)});return o}
+function anilloZona(T,id,col='rgba(11,95,165,.42)'){const k=PARTES.indexOf(id),ro=T.B[k],rin=k<5?T.B[k+1]:0;const circ=(rad,sx=1,ox=0,oy=0)=>{const [a,b]=cen(T,rad);return `M${F(a-rad)} ${F(b)} a${F(rad)} ${F(rad)} 0 1 0 ${F(2*rad)} 0 a${F(rad)} ${F(rad)} 0 1 0 ${F(-2*rad)} 0 Z`};
+ const d=circ(ro)+(rin?circ(rin):'');const [qx,qy]=T.Q;return `<path d="${d}" fill="${col}" fill-rule="evenodd" stroke="#0B5FA5" stroke-width="2"/><g clip-path="url(#clI)"><g transform="translate(${T.IC[0]},${T.IC[1]}) scale(${T.s}) translate(${F(-qx)},${F(-qy)})"><path d="${d}" fill="${col}" fill-rule="evenodd"/></g></g>`}
+function centroZona(T,id){const k=PARTES.indexOf(id),ro=T.B[k],rin=k<5?T.B[k+1]:0,rm=(ro+rin)/2,[a,b]=cen(T,rm),ang=k<3?T.phi+1.2:k===5?0:-2.2;if(k===5)return cen(T,0);if(k<3){const [qx,qy]=T.Q,[c,d]=cen(T,rm),th=Math.atan2(qy-d,qx-c),px=c+Math.cos(th)*rm,py=d+Math.sin(th)*rm;return [T.IC[0]+(px-qx)*T.s,T.IC[1]+(py-qy)*T.s]}return [a+Math.cos(ang)*rm,b+Math.sin(ang)*rm]}
+function genTronco(r){const T=troncoNuevo(r),labs=baraja(r,PARTES),Pz={L:ri(r,60,240)*10,A:ri(r,12,60)*5,G:0};Pz.G=Math.min(ri(r,4,16)*5,Math.floor(Pz.A/2/5)*5)||20;
+ const sec=baraja(r,['transversal','radial','tangencial']),rs=r()*1e9|0,dsp=pick(r,['paralelo','encuartonado','radial']),rd=r()*1e9|0;
+ const NS={transversal:'Transversal',radial:'Radial',tangencial:'Tangencial'};
+ const qd=pick(r,[['¿Qué forma de despiezar da las piezas más estables y con la veta más vistosa?','Radial'],['¿Qué forma de despiezar aprovecha más el tronco y es la más barata?','Paralelo'],['¿Con qué forma de despiezar salen muchas tablas tangenciales, que se deforman más?','Paralelo'],['¿En qué forma de despiezar se divide primero el tronco en cuatro?','Encuartonado'],['¿Qué forma de despiezar desperdicia más madera y es la más cara?','Radial']]);
+ const EJ=troncoNuevo(RNG(12345));
+ const P=[
+ {t:'demo',tit:'Ejemplo resuelto: las partes del tronco',vis:()=>({svg:troncoSvg(EJ,{marcas:leyendaTronco(EJ)}),tit:'Ejemplo (no es tu tronco)'}),html:`<p class="ins">Así se reconocen en la testa de un tronco, de fuera adentro ${DIAP(11)}:</p><table><tr><td><b>Corteza</b></td><td>Protege el árbol. Se elimina siempre.</td></tr><tr><td><b>Líber</b></td><td>Capa interior de la corteza; por ella baja la savia elaborada.</td></tr><tr><td><b>Cámbium</b></td><td>Capa muy fina entre líber y albura que genera cada año madera nueva.</td></tr><tr><td><b>Albura</b></td><td>Madera joven y clara. Menos durable, más fácil de impregnar.</td></tr><tr><td><b>Duramen</b></td><td>Madera madura, más oscura, dura y durable. La más valorada.</td></tr><tr><td><b>Médula</b></td><td>Centro del tronco. Blanda y tiende a rajarse.</td></tr></table><p class="ins" style="margin-top:8px">Las capas finas se ven mejor en el <b>detalle A</b>, ampliado.</p>`},
+ {t:'etiq',tit:'Las partes de tu tronco',enun:'Coloca cada etiqueta en su parte del tronco. Arrástrala al dibujo, o púlsala y después pulsa en el dibujo. Las capas finas también se pueden señalar en el <b>detalle A</b>.',labs:labs.map(id=>({id,n:NPARTE[id]})),zona:(x,y)=>zonaTroncoVis(T,x,y),svg:m=>troncoSvg(T,{marcas:m}),pista:(id,z)=>(z?`Ahí está ${NPARTE[z].toLowerCase()==='cámbium'?'el cámbium':['corteza','albura','medula'].includes(z)?'la '+NPARTE[z].toLowerCase():'el '+NPARTE[z].toLowerCase()}. `:'Eso está fuera del tronco. ')+DESC_PARTE[id]+' '+DIAP(11),ay:id=>anilloZona(T,id),nom:NPARTE,cert:true},
+ {t:'num',tit:'¿Cuántos años tenía el árbol?',enun:'Cada anillo corresponde a un año de crecimiento. Cuenta los anillos de tu tronco. Usa el zoom si lo necesitas.',vis:()=>({svg:troncoSvg(T)}),ay:()=>troncoSvg(T,{numera:true}),campos:[{id:'e',et:'Edad del árbol',sol:T.N,tol:0,u:'años'}],pista:'Cuenta las líneas oscuras (la madera de verano tardío, al final de cada año) desde la médula hasta el cámbium. Cada una cierra un anillo '+DIAP(12),exp:`Tenía ${T.N} años: ${T.N} anillos.`},
+ {t:'elige',tit:'El clima queda registrado',enun:'Fíjate en los anillos del <b>tramo B</b> y compáralos con los de alrededor. ¿Cómo fueron esos años?',vis:()=>({svg:troncoSvg(T,{tramo:true})}),ops:['Años lluviosos','Años de sequía'],fijo:true,sol:T.tipo==='lluvia'?0:1,pista:'Épocas lluviosas: anillos anchos. Sequía: anillos estrechos '+DIAP(12),exp:T.tipo==='lluvia'?'Anillos anchos: el árbol creció mucho, fueron años lluviosos.':'Anillos estrechos: el árbol apenas creció, fueron años de sequía.'},
+ {t:'elige',tit:'Dentro de cada anillo',enun:'¿Qué parte de cada anillo es la madera de primavera (o de verano temprano)?',vis:()=>({svg:troncoSvg(T)}),...opsCon(r,'La parte clara y porosa, que crece rápido',['La línea oscura y densa del final del anillo','La corteza','El cámbium']),pista:'La madera de primavera crece rápido: es más clara y porosa. La de verano tardío es más oscura y densa '+DIAP(12),exp:'Correcto: la línea oscura es la madera de verano tardío.'},
+ {t:'multi',tit:'Las tres secciones de la madera',enun:'Estas tres piezas están cortadas de distinta forma. ¿Qué sección es cada una?',vis:()=>({svg:seccionesSvg(sec,RNG(rs))}),items:sec.map((s,i)=>({et:'Pieza '+(i+1),ops:['Transversal','Radial','Tangencial'],sol:NS[s]})),pista:{Transversal:'La sección transversal es perpendicular al eje del tronco: se ven los anillos como círculos. Es la testa',Radial:'La sección radial pasa por la médula: la veta sale en líneas rectas y paralelas',Tangencial:'La sección tangencial es tangente a los anillos: la veta sale con dibujos en «llama» o «catedral»'},ref:DIAP(14),exp:'Correcto: anillos en círculos (transversal), líneas paralelas (radial) y llamas o catedrales (tangencial).'},
+ {t:'elige',tit:'Formas de despiezar el tronco',enun:'¿Cómo se ha despiezado este tronco?',vis:()=>({svg:despieceSvg(dsp,RNG(rd))}),ops:['Paralelo','Encuartonado','Radial'],fijo:true,sol:['paralelo','encuartonado','radial'].indexOf(dsp),pista:'Paralelo: todos los cortes paralelos. Encuartonado: primero se divide en cuartos y luego se asierra cada cuarto. Radial: cortes hacia la médula '+DIAP(15),exp:{paralelo:'Paralelo: máximo aprovechamiento y más barato, pero muchas tablas tangenciales, que se deforman más.',encuartonado:'Encuartonado: piezas más estables que en el paralelo.',radial:'Radial: las piezas más estables y con la veta más vistosa, pero más desperdicio y más caro.'}[dsp]},
+ {t:'elige',tit:'Formas de despiezar el tronco',enun:qd[0],vis:()=>({svg:despieceSvg(dsp,RNG(rd))}),ops:['Paralelo','Encuartonado','Radial'],fijo:true,sol:['Paralelo','Encuartonado','Radial'].indexOf(qd[1]),pista:'Paralelo: máximo aprovechamiento y más barato, pero muchas tablas tangenciales. Encuartonado: más estable que el paralelo. Radial: las piezas más estables y vistosas, pero más desperdicio y más caro '+DIAP(15),exp:'Correcto.'},
+ {t:'etiq',tit:'Nombres de la pieza',enun:'Coloca cada nombre en su superficie de la pieza.',labs:baraja(r,['cara','canto','testa']).map(id=>({id,n:id[0].toUpperCase()+id.slice(1)})),zona:(x,y)=>zonaPieza(Pz,x,y),svg:m=>piezaSvg(Pz,m),pista:(id)=>({cara:'La cara es la superficie mayor de la pieza.',canto:'El canto es la superficie lateral estrecha, a lo largo de la fibra.',testa:'La testa es el extremo de la pieza, cortado de través a la fibra: ahí se ven los anillos.'}[id])+' '+DIAP(16),ay:id=>{const g=piezaGeo(Pz.L,Pz.A,Pz.G);return poli(g[id],'rgba(11,95,165,.4)','#0B5FA5',3)},nom:{cara:'Cara',canto:'Canto',testa:'Testa'}},
+ {t:'lag',tit:'Las medidas de la pieza',enun:'Escribe las medidas de esta pieza tal como van en una nota de madera, separadas por «x». Por ejemplo: <b>800 x 90 x 20</b>.',vis:()=>({svg:piezaSvg(Pz)}),sol:[Pz.L,Pz.A,Pz.G],pista:'En las notas de madera y en los despieces las medidas van en este orden: largo × ancho × grueso '+DIAP(16),exp:`Correcto: ${Pz.L} x ${Pz.A} x ${Pz.G}. Primero el largo (a lo largo de la fibra), después el ancho y por último el grueso.`},
+ ];P.T=T;P.dat={edad:T.N,tramo:T.tipo,sec,dsp,pieza:`${Pz.L} x ${Pz.A} x ${Pz.G}`};return P}
+
+/* ---------- fase 2: humedad y secado ---------- */
+const POOL_HUM=[
+ ['¿Qué agua pierde primero la madera, sin cambiar de medida?','El agua libre, dentro de las cavidades de las células',['El agua de impregnación, dentro de las paredes celulares','El agua de la corteza','La savia elaborada del líber'],'El agua libre está dentro de las cavidades de las células: se pierde primero y no cambia las medidas '+DIAP(18)],
+ ['¿Qué agua, al perderse, hace que la madera merme?','El agua de impregnación, dentro de las paredes celulares',['El agua libre, dentro de las cavidades de las células','El agua de lluvia de la superficie','Ninguna: la madera no merma'],'El agua de impregnación está dentro de las paredes celulares: al perderla, la madera merma '+DIAP(18)],
+ ['¿Por debajo de qué humedad aproximada empieza a mermar la madera?','Del 30 % (punto de saturación de las fibras)',['Del 12 %','Del 50 %','Del 8 %'],'Punto de saturación de las fibras, ≈ 30 %: por encima no cambia de medida; por debajo empieza a mermar '+DIAP(18)],
+ ['¿Con qué aparato medimos la humedad de la madera en el taller?','Con el xilohigrómetro (medidor de humedad de púas)',['Con el calibre (pie de rey)','Con un higrómetro de ambiente','Con la escuadra falsa'],'Se mide en el taller con el xilohigrómetro, el medidor de humedad de púas '+DIAP(18)],
+ ['¿A qué humedad de referencia dan sus datos las fichas técnicas?','Al 12 %',['Al 0 %','Al 30 %','Al 18 %'],'El 12 % es el valor de referencia de las fichas técnicas '+DIAP(19)],
+ ['¿Qué hay que hacer con la madera antes de mecanizarla?','Dejar que se aclimate en el taller',['Mojarla para que no se raje','Barnizarla','Nada: se mecaniza nada más llegar'],'La madera debe aclimatarse en el taller antes de mecanizarla. Si se trabaja húmeda, la pieza se mueve después de montada '+DIAP(19)],
+ ['¿Por qué las rajas y fendas aparecen sobre todo en las testas?','Porque por la testa pierde humedad mucho más rápido que por la cara',['Porque la testa es más dura','Porque la sierra la quema','Porque ahí está la médula'],'La madera pierde humedad mucho más rápido por la testa que por la cara '+DIAP(32)],
+ ['Una pieza de sección cuadrada, al secarse, ¿en qué suele acabar?','En un rombo, porque la merma tangencial es el doble que la radial',['Sigue siendo un cuadrado más pequeño','En un círculo','En un rectángulo más largo'],'La merma tangencial es el doble que la radial: las piezas cuadradas acaban en rombo '+DIAP(21)],
+];
+const POOL_SEC=[
+ ['Necesitas madera al 8–12 % para un mueble de interior. ¿Qué secado hace falta?','Secado artificial, en secadero',['Secado natural, al aire','Cualquiera de los dos','Ninguno: ya viene seca del bosque'],'El secado natural solo baja hasta la humedad del ambiente exterior; el secadero alcanza el 8–12 % que necesita el mueble '+DIAP(20)],
+ ['Madera apilada con rastreles, a cubierto y ventilada, durante meses. ¿Qué secado es?','Secado natural, al aire',['Secado artificial, en secadero','Secado al vacío','No es un secado'],'El secado natural se apila con rastreles, a cubierto y ventilado: lento (meses) y barato '+DIAP(20)],
+ ['¿Qué provoca un secado demasiado rápido o mal controlado?','Fendas, deformaciones, atejado o colapso',['Que la madera pese más','Que aumente su durabilidad','Nada, solo ahorra tiempo'],'Un secado demasiado rápido o mal controlado provoca fendas, deformaciones, atejado o colapso '+DIAP(20)],
+ ['Según su ficha, ¿qué madera tiene un secado «difícil y lento»?','Haya',['Pino radiata','Framiré','Pino silvestre'],'La ficha de la haya avisa: secado difícil y lento '+DIAP(20)],
+ ['Según su ficha, ¿qué madera tiene un secado fácil y rápido?','Pino radiata',['Haya','Castaño','Nogal americano'],'Pino radiata: secado fácil y rápido '+DIAP(20)],
+ ['Según su ficha, ¿qué madera tiene riesgo de colapso al secarse?','Castaño',['Pino radiata','Pino silvestre','Iroko'],'Castaño: secado lento, con riesgo de colapso '+DIAP(20)],
+];
+function qPool(r,L,tit,vis){return L.map(([e,ok,mal,p])=>({t:'elige',tit,enun:e,...opsCon(r,ok,mal),pista:p,exp:'Correcto: '+ok.charAt(0).toLowerCase()+ok.slice(1)+'.',vis}))}
+function genHumedad(r){const s=ri(r,30,90)*10,hp=pick(r,[rf(r,9,16),rf(r,20,34),rf(r,40,75)]),h=Math.round(s*(1+hp/100)),ch=Math.round((h-s)/s*1000)/10,mal=Math.round((h-s)/h*1000)/10;
+ const bins=[['verde',rf(r,35,80)],['seguir',rf(r,19,28)],['ext',rf(r,13,17.5)],['int',rf(r,8.5,11.5)]],bi=pick(r,bins),xv=Math.round(bi[1]*10)/10;
+ const EST=['Está por encima del punto de saturación (≈ 30 %): todavía no ha empezado a mermar','Tiene que seguir secándose: no sirve ni para interior ni para exterior','Sirve para carpintería exterior (12–18 %)','Sirve para un mueble de interior (8–12 %)'];
+ const mt=pick(r,['tangencial','radial','longitudinal','tangencial','radial']),mv=mt==='longitudinal'?ri(r,8,30)*100:ri(r,12,30)*10,pc={tangencial:8,radial:4,longitudinal:.01}[mt],ms=Math.round(mv*pc/100*1000)/1000;
+ const pt=r()<.6?'tangencial':'radial',rp=r()*1e9|0,xs=xiloSvg(xv);
+ return [
+ {t:'demo',tit:'Ejemplo resuelto: el contenido de humedad',vis:()=>({svg:pesosSvg(600,500),tit:'Ejemplo (no es tu pieza)'}),html:`<p class="ins">Una pieza pesa <b>600 g</b> recién cortada y <b>500 g</b> seca del todo ${DIAP(18)}:</p><p class="enun">Contenido de humedad = (peso húmedo − peso seco) ÷ peso seco × 100<br>= (600 − 500) ÷ 500 × 100 = <b>20 %</b></p><p class="ins">Ojo: se divide entre el peso <b>seco</b>. El agua libre se pierde primero sin cambiar las medidas; al perder el agua de impregnación (por debajo del ≈ 30 %), la madera merma.</p>`},
+ {t:'num',tit:'¿Qué humedad tenía?',enun:'Calcula el contenido de humedad de tu pieza con una decimal.',vis:()=>({svg:pesosSvg(h,s)}),campos:[{id:'ch',et:'Contenido de humedad',sol:ch,tol:.06,u:'%',dec:1}],pista:v=>Math.abs(v-mal)<.06?'Has dividido entre el peso húmedo. Se divide entre el peso seco: (húmedo − seco) ÷ seco × 100 '+DIAP(18):'(peso húmedo − peso seco) ÷ peso seco × 100 '+DIAP(18),exp:`(${h} − ${s}) ÷ ${s} × 100 = ${coma(ch,1)} %`},
+ {t:'elige',tit:'¿Se puede usar ya?',enun:`El xilohigrómetro marca <b>${coma(xv,1)} %</b> en esta tabla. ¿En qué situación está?`,vis:()=>({svg:xs}),ops:EST,fijo:true,sol:['verde','seguir','ext','int'].indexOf(bi[0]),pista:'Por encima del ≈ 30 % todavía no merma. Mueble de interior: 8–12 %. Carpintería exterior: 12–18 % '+DIAP(19),exp:'Correcto.'},
+ ...qPool(r,baraja(r,POOL_HUM).slice(0,2),'La humedad de la madera',()=>({svg:xs})),
+ ...qPool(r,baraja(r,POOL_SEC).slice(0,2),'El secado',()=>({svg:xs})),
+ {t:'num',tit:'¿Cuánto merma?',enun:`Esta tabla se seca desde verde hasta seca. ¿Cuánto merma ${mt==='longitudinal'?'su <b>largo</b>':'su <b>ancho</b>'}? Fíjate en ${mt==='longitudinal'?'qué medida es':'cómo van los anillos en la testa'}.`,vis:()=>({svg:mermaSvg(mt,mv)}),campos:[{id:'m',et:'Merma',sol:ms,tol:mt==='longitudinal'?.006:.06,u:'mm',dec:mt==='longitudinal'?2:1}],pista:(mt==='longitudinal'?'De largo casi no merma: 0,01 %. ':'Mira la testa: si los anillos van casi paralelos a la cara, el corte es tangencial (8 %); si la cruzan de canto, es radial (4 %). ')+'Merma = medida × % ÷ 100 '+DIAP(22),exp:`${mv} × ${coma(pc,pc<1?2:0)} % = ${n1(ms)} mm. Es una tabla de corte ${mt}.`},
+ {t:'elige',tit:'¿Hacia dónde se abarquilla?',enun:'Esta tabla se ha sacado del tronco por la posición marcada en azul. Al secarse, ¿qué le pasará?',vis:()=>({svg:posTablaSvg(pt,RNG(rp))}),ops:['Se abarquilla como una teja: los cantos se curvan hacia el lado contrario a la médula','Se abarquilla con los cantos curvándose hacia la médula','Apenas se deforma: es la tabla más estable'],fijo:true,sol:pt==='radial'?2:0,pista:'Las tablas de corte paralelo (tangenciales) se abarquillan hacia el lado contrario a la médula. Las de corte radial, que pasan por la médula, son las más estables '+DIAP(21),exp:pt==='radial'?'Es una tabla radial: pasa por la médula y es la más estable.':'Es una tabla tangencial: se abarquilla hacia el lado contrario a la médula.'},
+ ].map(p=>(p.dat={ch,xv,merma:`${mt} ${mv} mm → ${n1(ms)} mm`,tabla:pt},p))}
+
+/* ---------- fase 3: tablas con defectos y alistonado ---------- */
+const PISTA_DEF={nsano:'Un nudo sano está unido a la madera, es de color parecido y no se desprende',nmuerto:'Un nudo muerto (saltadizo) está rodeado de un anillo oscuro y suelto: puede saltar',npod:'Un nudo podrido está descompuesto por hongos: oscuro y desmenuzado',abarq:'Mira la testa: se curva a lo ancho, como una teja',canto:'Mira la cara: los cantos quedan curvados como un plátano',cara:'Mira el canto: apoyada en la cara, la tabla no asienta entera',alabeo:'Compara las dos testas: la tabla está retorcida y las cuatro esquinas no quedan en un plano',fenda:'Hay separaciones de la fibra que salen desde la testa',resina:'Hay una acumulación de resina, de color ámbar, a lo largo de la veta',medula:'Hay una línea oscura a lo largo de la pieza y, en la testa, se ve el centro de los anillos'};
+function q2Def(r,d){const vista=r()<.5,dest=(s,e)=>({enun:`Esta tabla va a ser <b>${vista?'una balda vista':'una pieza oculta'}</b>. ¿Qué haces con ella?`,ops:DESTINO,fijo:true,sol:s,exp:e});
+ if(d==='nsano')return dest(0,'Un nudo sano suele admitirse; en mueble rústico incluso decora.');
+ if(d==='nmuerto')return vista?dest(1,'En una pieza vista se evita o se sanea: puede saltar y dejar un agujero.'):dest(0,'En una pieza oculta se puede usar; en una vista habría que evitarlo o sanearlo.');
+ if(d==='npod')return dest(3,'La zona de un nudo podrido se desecha siempre.');
+ if(d==='fenda')return dest(2,'La zona rajada se sanea cortando la testa antes de dar la medida final.');
+ if(d==='medula')return vista?dest(1,'La médula es blanda y tiende a rajarse: se evita en piezas vistas.'):dest(0,'En una pieza oculta se puede usar; en las vistas se evita porque es blanda y tiende a rajarse.');
+ if(d==='resina')return {enun:'¿Qué problema dan las bolsas de resina?',...opsCon(r,'Dan problemas en el acabado',['Hacen que la tabla se alabee','Pudren la madera','Ninguno']),exp:'Dan problemas en el acabado. Son típicas del pino silvestre y del pino amarillo.'};
+ if(d==='abarq')return {enun:'¿Con qué tipo de corte es típico el abarquillado?',ops:['Con el corte tangencial','Con el corte radial','Con el corte transversal'],fijo:true,sol:0,exp:'Es típico del corte tangencial.'};
+ if(d==='alabeo')return {enun:'¿Es fácil de corregir este defecto?',...opsCon(r,'No: es la deformación más difícil de corregir',['Sí, basta con lijar la cara','Sí, se corrige solo al secarse','Sí, apretándolo al encolar']),exp:'El alabeo es el más difícil de corregir.'};
+ return {enun:'¿Cuál es una causa habitual de esta deformación?',...opsCon(r,'Un secado mal hecho o cambios de humedad después del mecanizado',['Usar la tabla en una pieza oculta','Barnizarla con brocha','Medirla con el flexómetro']),exp:'Causas habituales: secado mal hecho, corte tangencial, fibra desviada, tensiones internas y cambios de humedad después del mecanizado.'}}
+function genTablas(r){const defs=baraja(r,Object.keys(DEFECTOS)).slice(0,ri(r,5,6)),P=[{t:'demo',tit:'Ejemplo resuelto: revisar una tabla',vis:()=>({svg:tablaSvg('nsano',RNG(99)),tit:'Ejemplo (no es tu tabla)'}),html:`<p class="ins">Cada tabla se mira por la cara, por el canto y por la testa. Esta tiene un <b>nudo sano</b>: unido a la madera, de color parecido y que no se desprende. Suele admitirse; en mueble rústico incluso decora ${DIAP(33)}.</p><table><tr><td><b>Nudo muerto</b></td><td>Evitarlo en piezas vistas o sanearlo.</td></tr><tr><td><b>Nudo podrido</b></td><td>Esa zona se desecha siempre.</td></tr><tr><td><b>Fenda</b></td><td>Se sanea cortando la testa antes de dar la medida final.</td></tr><tr><td><b>Deformaciones</b></td><td>Abarquillado, canto curvado, cara curvada y alabeo ${DIAP(31)}.</td></tr></table>`}];
+ const NOMS=Object.keys(DEFECTOS).map(k=>DEFECTOS[k].n);
+ defs.forEach((d,i)=>{const rs=r()*1e9|0,v=()=>({svg:tablaSvg(d,RNG(rs)),tit:`Tabla ${i+1} de ${defs.length}`}),q=q2Def(r,d);
+  P.push({t:'elige',tit:`Tabla ${i+1}: ¿qué defecto tiene?`,enun:'Revisa la tabla por la cara, el canto y la testa. ¿Qué defecto tiene?',vis:v,...opsCon(r,DEFECTOS[d].n,NOMS),pista:PISTA_DEF[d]+' '+DIAP(DEFECTOS[d].d),exp:`Correcto: ${DEFECTOS[d].n.toLowerCase()}.`,ay:()=>tablaSvg(d,RNG(rs),true)});
+  P.push({t:'elige',tit:`Tabla ${i+1}: ${DEFECTOS[d].n.toLowerCase()}`,vis:v,pista:'Repasa qué se hace con cada defecto '+DIAP(DEFECTOS[d].d),...q})});
+ const n=ri(r,5,9);let e;do{e=Array.from({length:n},()=>r()<.5)}while(e.every((v,i)=>!i||v!==e[i-1]));
+ P.push({t:'listones',tit:'Encolar un tablero alistonado',enun:'Vas a encolar estos listones para hacer un tablero. Voltea los que haga falta para que el tablero <b>quede plano</b> y pulsa <b>Comprobar</b>.',ini:e,pista:'Fíjate en la curva de los anillos de cada listón: cada uno debe ir al revés que el de al lado, para que sus movimientos se compensen '+DIAP(36),exp:'Anillos alternados: cada listón se abarquilla hacia un lado distinto, los movimientos se compensan y el tablero queda plano.'});
+ P.push({t:'elige',tit:'Encolar un tablero alistonado',enun:'Además de alternar los anillos, ¿qué más ayuda a que el tablero quede plano?',vis:()=>({svg:listonesSvg(e.map((v,i)=>i%2===0),'ok')}),...opsCon(r,'Listones estrechos, con la misma humedad y, si es posible, de corte radial',['Listones muy anchos, para que haya menos juntas','Listones con humedades distintas','Listones de corte tangencial']),pista:'Repasa la solución del reto de encolado '+DIAP(36),exp:'Correcto.'});
+ P.dat={defectos:defs.map(d=>DEFECTOS[d].n),listones:n};return P}
+
+/* ---------- fase 4: fichas técnicas ---------- */
+function fichaHtml(e,tapar){const T=v=>tapar?'<span class="tapado">oculto</span>':esc(v),apl=tapar?e.apl.replace(' Mesilla Tilt y silla VOID.',''):e.apl;const fila=(a,b)=>b?`<tr><td>${a}</td><td>${b}</td></tr>`:'';
+ return `<div class="ficha"><div class="fc">${tapar?'¿Qué especie es?':esc(e.n)}<small>${tapar?'Nombre científico y otros nombres ocultos':`<i>${esc(e.ci)}</i>${e.sin?' · '+esc(e.sin):''}`}</small></div><table>${fila('Grupo',e.g)}${fila('Origen',esc(e.ori))}${fila('Descripción',esc(e.desc))}${fila('Densidad (12 % hum.)',(e.de?e.de:e.deT)+' kg/m³ · '+e.deC)}${fila('Coef. contracción vol.',coma(e.co,2)+' % · '+e.coC)}${fila('Relación contracciones',coma(e.re,2).replace(/0$/,'')+' · '+e.reC)}${fila(e.du?'Dureza (Chalais-Meudon)':'Dureza (Brinell)',(e.du?coma(e.du,2).replace(/0$/,''):e.duT)+' · '+e.duC)}${fila('Flexión estática',e.fl+' kg/cm²')}${fila('Módulo de elasticidad',e.el+' kg/cm²')}${fila('Compresión paralela',e.cp+' kg/cm²')}${e.tr?fila('Tracción paralela',e.tr+' kg/cm²'):''}${fila('Durabilidad natural',e.dur)}${fila('Impregnabilidad',e.imp)}${fila('Mecanización',esc(e.mec))}${fila('Aplicaciones',esc(apl))}</table><div style="padding:6px 12px;color:#55615B;font-size:13px">Datos: fichas técnicas de la Asociación Española del Comercio e Industria de la Madera (AEIM).</div></div>`}
+function anexoHtml(){return `<div class="guiaE" style="max-width:none"><b>Tabla comparativa de especies</b> ${DIAP(62)}<table class="anexo"><tr><th>Especie</th><th>Grupo</th><th class="n">Densidad</th><th class="n">Coef.</th><th class="n">Dureza</th><th>Durabilidad</th></tr>${ESP.map(e=>`<tr><td>${e.n}</td><td>${e.g}</td><td class="n">${e.de||e.deT}</td><td class="n">${coma(e.co,2)}</td><td class="n">${e.du?coma(e.du,2).replace(/0$/,''):'33 HB'}</td><td>${e.dur}</td></tr>`).join('')}</table></div>`}
+function qEspecie(r,e){const G=[];
+ if(DURAB.includes(e.dur))G.push({enun:`Según su ficha, ¿qué durabilidad natural tiene el <b>${e.n.toLowerCase()}</b>?`,ops:DURAB,fijo:true,sol:DURAB.indexOf(e.dur),pista:'Busca «Durabilidad natural»: es la resistencia frente a los hongos, sin tratamiento '+DIAP(28)});
+ if(DURAB.includes(e.dur))G.push({enun:`¿Aguantaría el <b>${e.n.toLowerCase()}</b> a la intemperie sin tratar?`,ops:['Sí: es una madera durable','No: necesitaría tratamiento o usar otra madera'],fijo:true,sol:['Muy durable','Durable'].includes(e.dur)?0:1,pista:'Para exterior: madera durable, o madera impregnable tratada. Mira su durabilidad natural '+DIAP(28)});
+ G.push({enun:`Por su densidad, ¿cómo se clasifica el <b>${e.n.toLowerCase()}</b>?`,ops:DENS_C,fijo:true,sol:DENS_C.indexOf(e.deC),pista:'Busca la densidad al 12 % de humedad y su clasificación '+DIAP(25)});
+ G.push({enun:`Por su dureza, ¿cómo se clasifica el <b>${e.n.toLowerCase()}</b>?`,ops:DUR_C,fijo:true,sol:DUR_C.indexOf(e.duC),pista:'Busca la dureza en la ficha y su clasificación '+DIAP(26)});
+ if(e.at!==null)G.push({enun:`¿Tiene el <b>${e.n.toLowerCase()}</b> tendencia a atejarse (curvarse como una teja)?`,ops:['Sí, tiene tendencia a atejarse o alabearse','No tiene tendencia a atejarse'],fijo:true,sol:e.at?0:1,pista:'Busca la relación entre contracciones y lo que dice la ficha de su tendencia '+DIAP(24)});
+ const AV=AVISOS.filter(a=>a[1].includes(e.id)),NO=AVISOS.filter(a=>!a[1].includes(e.id)).map(a=>a[0]);if(AV.length)G.push({enun:`¿Qué aviso da la ficha sobre cómo se trabaja el <b>${e.n.toLowerCase()}</b>?`,...opsCon(r,pick(r,AV)[0],NO),pista:'Busca el apartado «Mecanización» de la ficha '+DIAP(29)});
+ G.push({enun:`¿A qué grupo pertenece el <b>${e.n.toLowerCase()}</b>?`,ops:['Conífera','Frondosa','Tropical'],fijo:true,sol:['Conífera','Frondosa','Tropical'].indexOf(e.g),pista:'Coníferas: hoja en aguja y semilla en piñas. Las tropicales son frondosas, pero se estudian aparte por su procedencia '+DIAP(37)});
+ const ORI=[...new Set(ESP.map(x=>x.ori))];G.push({enun:`¿De dónde procede el <b>${e.n.toLowerCase()}</b>?`,...opsCon(r,e.ori,ORI),pista:'Busca «Origen» en la ficha '+DIAP(30)});
+ return G}
+function genFichas(r){const E1=baraja(r,ESP),q1=E1[0],q2=E1[1],P=[];const rad=esp('rad');
+ P.push({t:'demo',tit:'Ejemplo resuelto: leer una ficha técnica',vis:()=>({html:fichaHtml(rad,false),tit:'Ejemplo: pino radiata'}),html:`<p class="ins">El pino radiata, la madera de la mesilla Tilt y de la silla VOID ${DIAP(30)}: <b>semiligero, semiblando, estable, sin tendencia a atejar, poco durable y fácil de mecanizar</b>. Necesita pretaladro para clavar.</p><table><tr><td>¿De dónde procede?</td><td>De plantaciones en varias zonas del mundo.</td></tr><tr><td>¿Aguantaría a la intemperie sin tratar?</td><td>No: es poco durable a sensible.</td></tr><tr><td>¿Qué precaución hay al clavarlo?</td><td>Pretaladrar.</td></tr></table><p class="ins" style="margin-top:8px">Fíjate siempre en las unidades y en la escala de dureza: no todas las fichas usan las mismas.</p>`});
+ for(const [i,e] of [q1,q2].entries()){const mismos=ESP.filter(x=>x.id!==e.id&&x.g===e.g),otros=ESP.filter(x=>x.id!==e.id&&x.g!==e.g),dis=[...baraja(r,mismos).slice(0,2),...baraja(r,otros)].slice(0,3).map(x=>x.n);
+  P.push({t:'elige',tit:`¿Quién es quién? (${i+1} de 2)`,enun:'Lee esta ficha técnica. ¿De qué especie es?',vis:()=>({html:fichaHtml(e,true),tit:'Ficha con el nombre tapado'}),...opsCon(r,e.n,dis),pista:'Fíjate en el grupo, el origen, la densidad, la dureza y las aplicaciones. Repasa las fichas '+DIAP('39 a 45'),ay:()=>anexoHtml(),exp:`Correcto: ${e.n.toLowerCase()}.`})}
+ const crit=pick(r,[['de','densidad','de más ligera a más pesada',true,'kg/m³'],['du','dureza','de más blanda a más dura',true,'Chalais-Meudon'],['co','estabilidad','de más estable a más nerviosa (coeficiente de contracción volumétrica)',true,'']]);let L;
+ do{L=baraja(r,ESP.filter(e=>e[crit[0]]!=null)).slice(0,5)}while(new Set(L.map(e=>e[crit[0]])).size<5);
+ P.push({t:'orden',tit:'Ordena las especies',enun:`Ordena estas especies <b>${crit[2]}</b>. Usa las flechas y pulsa <b>Comprobar</b>.`,vis:()=>({html:`<div class="guiaE"><p style="font:700 24px Barlow Condensed,Arial;margin:0 0 8px">Sin mirar las fichas</p><p>Recuerda lo que has visto en la presentación. Si te atascas, la ayuda gráfica muestra la tabla comparativa de especies (resta 0,5).</p></div>`}),items:L.map(e=>e.id),val:id=>esp(id)[crit[0]],nom:id=>esp(id).n,pista:'Repasa la '+crit[1]+' de cada especie '+DIAP(crit[0]==='de'?25:crit[0]==='du'?26:24),ay:()=>anexoHtml(),exp:'Correcto: '+[...L].sort((a,b)=>a[crit[0]]-b[crit[0]]).map(e=>`${e.n.toLowerCase()} (${String(e[crit[0]]).replace('.',',')})`).join(', ')+'.'});
+ const ep=pick(r,ESP.filter(e=>e.de)),L2=ri(r,12,48)*50,A2=ri(r,5,25)*10,G2=ri(r,4,16)*5,Vex=L2*A2*G2/1e9,V=Math.round(L2*A2*G2/1e4)/1e5,kg=Math.round(V*ep.de*100)/100;
+ P.push({t:'num',tit:'¿Cuánto pesa la pieza?',enun:`Una pieza de <b>${ep.n.toLowerCase()}</b> mide <b>${L2} x ${A2} x ${G2} mm</b>. Calcula su volumen en m³, con 5 decimales, y su peso en kg con la densidad de su ficha.`,vis:()=>({html:fichaHtml(ep,false),tit:'Ficha de la especie'}),campos:[{id:'v',et:'Volumen',sol:V,ex:Vex,tol:.0000099,u:'m³',dec:5},{id:'p',et:'Peso',sol:kg,tol:.021,u:'kg',dec:2}],pista:{v:'Pasa las medidas a metros y multiplícalas: largo × ancho × grueso. 1 m = 1000 mm. Escribe 5 decimales',p:'Peso = volumen (m³) × densidad (kg/m³). La densidad está en la ficha, al 12 % de humedad '+DIAP(25)},exp:`${n1(L2/1000)} × ${n1(A2/1000)} × ${n1(G2/1000)} = ${V.toFixed(5).replace('.',',')} m³; × ${ep.de} kg/m³ = ${coma(kg)} kg.`});
+ const lect=baraja(r,ESP.filter(e=>e.id!==q1.id&&e.id!==q2.id))[0];baraja(r,qEspecie(r,lect)).slice(0,3).forEach((q,i)=>P.push({t:'elige',tit:`Lee la ficha (${i+1} de 3)`,vis:()=>({html:fichaHtml(lect,false),tit:'Ficha técnica'}),exp:'Correcto.',...q}));
+ P.dat={quien:[q1.n,q2.n],orden:crit[1]+': '+L.map(e=>e.n).join(', '),peso:`${ep.n} ${L2}x${A2}x${G2} → ${n1(V)} m³, ${coma(kg)} kg`,ficha:lect.n};return P}
+
+/* ---------- fase 5: tableros ---------- */
+const PISTA_TAB={alis:'En la testa se ven listones de madera maciza encolados, cada uno con sus anillos',alisr:'Por dentro, listones de maciza; por fuera, una chapa fina en las caras',contra:'Capas finas con la fibra cruzada: unas se ven a lo largo y otras de testa (puntos)',aglo:'Partículas encoladas y prensadas, del mismo tamaño en todo el grueso',aglocd:'Partículas más finas en las caras y más gruesas en el centro',aglohi:'Partículas prensadas de color verde',mela:'Partículas prensadas, cubiertas por un papel decorativo fino en las caras',osb:'Virutas grandes orientadas, en capas cruzadas',dm:'Canto homogéneo, sin capas ni partículas a la vista, del color de la madera',dmhi:'Canto homogéneo, sin partículas, de color verde',dmig:'Canto homogéneo, sin partículas, de color rojo',tablex:'Muy fino, de fibras duro, con una cara lisa y la otra con textura'};
+const PISTA_REV={rmela:'Una capa muy fina de papel decorativo en la cara',rchapa:'Una lámina fina de madera real, con su veta',rhpl:'Varias capas de papel marrón (kraft) bajo la capa decorativa: más gruesa que la melamina',rlaca:'Pintura que cubre la cara y también el canto, sobre DM'};
+function genTableros(r){const tipos=baraja(r,TIPOS_TAB).slice(0,6),P=[];const NT=TIPOS_TAB.map(t=>TAB[t].n);
+ const mk=t=>{const g=pick(r,TAB[t].g),m={t,g,k:ri(r,4,7),n:3};if(t==='contra'){const mx=Math.max(3,Math.min(13,Math.floor(g/1.4))),L=[];for(let k=3;k<=mx;k+=2)L.push(k);m.n=pick(r,L)}return m};
+ const ej={t:'alis',g:30,k:5,n:3},re=r()*1e9|0;
+ P.push({t:'demo',tit:'Ejemplo resuelto: identificar un tablero',vis:()=>({svg:muestra(ej,RNG(5)),tit:'Ejemplo (no es tu muestra)'}),html:`<p class="ins">Para reconocer un tablero hay que mirar su <b>canto</b>: ahí se ve cómo está hecho por dentro.</p><p class="ins">Esta muestra es un <b>alistonado</b>: listones de madera maciza encolados por los cantos, con los anillos alternados para que quede plano ${DIAP(51)}.</p><table><tr><td><b>Maciza</b></td><td>Alistonado y alistonado rechapado.</td></tr><tr><td><b>Chapas</b></td><td>Contrachapado y tablero marino.</td></tr><tr><td><b>Partículas</b></td><td>Aglomerado, caras densas, hidrófugo (verde), melamina y OSB.</td></tr><tr><td><b>Fibras</b></td><td>DM, DM hidrófugo (verde), DM ignífugo (rojo) y tablex.</td></tr></table>`});
+ tipos.forEach((t,i)=>{const m=mk(t),rs=r()*1e9|0,col=pick(r,['#F4F4F0','#A4ACAF','#3B3B3B','#E9E1CF']),v=()=>({svg:muestra(m,RNG(rs),col),tit:`Muestra ${i+1} de ${tipos.length}`}),q=pick(r,TAB[t].q);
+  const parecidos={aglo:['aglocd','aglohi','mela','osb'],aglocd:['aglo','aglohi','dm'],aglohi:['aglo','dmhi','aglocd'],mela:['aglo','aglocd','dm'],dm:['dmhi','dmig','tablex','aglocd'],dmhi:['dm','aglohi','dmig'],dmig:['dm','dmhi','aglohi'],tablex:['dm','contra','dmhi'],contra:['alis','alisr','tablex'],alis:['alisr','contra','osb'],alisr:['alis','contra','aglocd'],osb:['aglo','contra','alis']}[t];
+  const dis=[...baraja(r,parecidos).slice(0,2),...baraja(r,TIPOS_TAB.filter(x=>x!==t&&!parecidos.includes(x)))].slice(0,3).map(x=>TAB[x].n);
+  P.push({t:'elige',tit:`Muestra ${i+1}: ¿qué tablero es?`,enun:'Mira bien el canto, la cara y el color. ¿Qué tablero es?',vis:v,...opsCon(r,TAB[t].n,dis),pista:PISTA_TAB[t]+' '+DIAP(TAB[t].d),exp:`Correcto: ${TAB[t].n.toLowerCase()}.`});
+  if(q[1]==='num')P.push({t:'num',tit:`Muestra ${i+1}: ${TAB[t].n.toLowerCase()}`,enun:q[0],vis:v,campos:[{id:'n',et:'Número de chapas',sol:m.n,tol:0,u:''}],pista:'Cuenta las capas en el canto, con el zoom: unas se ven a lo largo y otras de testa. Siempre son un número impar '+DIAP(52),exp:`Tiene ${m.n} chapas: siempre un número impar.`});
+  else P.push({t:'elige',tit:`Muestra ${i+1}: ${TAB[t].n.toLowerCase()}`,enun:q[0],vis:v,...opsCon(r,q[1][q[2]],q[1]),pista:'Repasa este tablero '+DIAP(TAB[t].d),exp:q[3]||'Correcto.'})});
+ baraja(r,Object.keys(REVS)).slice(0,2).forEach((rv,i)=>{const base=rv==='rlaca'?'dm':pick(r,['dm','aglocd']),m={t:base==='dm'?'dm':'aglocd',g:pick(r,[16,19,22]),rev:rv,base},rs=r()*1e9|0,col=rv==='rlaca'?pick(r,['#C0392B','#2F6F8F','#F4F4F0','#2E7D4F']):rv==='rhpl'?pick(r,['#E9E1CF','#A4ACAF','#3B3B3B']):pick(r,['#F4F4F0','#A4ACAF','#E9E1CF']),v=()=>({svg:muestra(m,RNG(rs),col),tit:`Revestimiento ${i+1} de 2`}),Q=REVS[rv].q;
+  P.push({t:'elige',tit:`Revestimiento ${i+1}: ¿qué lleva en la cara?`,enun:'Mira el detalle del canto. ¿Qué revestimiento de cara lleva este tablero?',vis:v,ops:['Melamina','Chapa natural','Laminado de alta presión','Lacado'],fijo:true,sol:['rmela','rchapa','rhpl','rlaca'].indexOf(rv),pista:PISTA_REV[rv]+' '+DIAP(55),exp:`Correcto: ${REVS[rv].n.toLowerCase()}.`});
+  P.push({t:'elige',tit:`Revestimiento ${i+1}: ${REVS[rv].n.toLowerCase()}`,enun:Q[0],vis:v,...opsCon(r,Q[1][Q[2]],Q[1]),pista:'Repasa los revestimientos de tableros '+DIAP(55),exp:Q[3]})});
+ const fq=pick(r,[['¿Cuál es la medida de tablero más usual?','2440 × 1220 mm',['2500 × 1250 mm','3660 × 2070 mm','2000 × 1000 mm']],['¿En qué formatos vienen los tableros rechapados?','2500 × 1250 y 2440 × 1220 mm',['Solo 3660 × 2070 mm','2850 × 2100 y 2800 × 2070 mm','2000 × 1000 mm']]]);
+ P.push({t:'elige',tit:'Formatos comerciales',enun:fq[0]+' Al planificar el despiece se parte siempre del formato comercial.',vis:()=>({html:`<div class="guiaE"><p style="font:700 24px Barlow Condensed,Arial;margin:0">Formatos y espesores comerciales</p><p>Al planificar el despiece, parte siempre del formato comercial para aprovechar al máximo el tablero.</p></div>`}),...opsCon(r,fq[1],fq[2]),pista:'Repasa los formatos comerciales '+DIAP(56),exp:'Correcto: 2440 × 1220 es la medida más usual.'});
+ P.dat={muestras:tipos.map(t=>TAB[t].n)};return P}
+
+/* ---------- fase 6: el encargo ---------- */
+function cantosOk(m,r){if(r==='Melamina')return ['Cinta de PVC o ABS'];if(r==='Chapa natural')return ['Chapa o contracanto macizo'];if(r==='Laminado de alta presión')return ['Cinta de PVC o ABS','Chapa o contracanto macizo'];if(r==='Lacado')return ['No lleva canto','Chapa o contracanto macizo'];if(m==='Alistonado rechapado')return ['Chapa o contracanto macizo'];return ['No lleva canto']}
+function guiaHtml(E,si){const L=[['¿Interior o exterior?','Durabilidad (iroko, castaño) o tablero hidrófugo o marino.'],['¿Se verá la veta o irá lacado?','Maciza o rechapada si se ve; DM si va lacado.'],['¿Qué esfuerzos soportará?','Densidad, flexión y compresión.'],['¿Qué ancho o superficie necesito?','Un tablero, o piezas de corte radial.'],['¿Cómo se mecanizará?','Curvar: haya, sapelli, fresno. Tornear: haya, bossé. Cuidado con la resina del pino amarillo.'],['¿Qué acabado llevará?','La haya toma bien el tinte; iroko y castaño dan problemas con ciertos productos.'],['¿Cuál es el presupuesto?','']];
+ return `<div class="guiaE"><p style="font:700 24px Barlow Condensed,Arial;margin:0 0 6px">Cómo elegir el material</p><p style="color:#55615B;margin:0 0 8px">${DIAP(60)}</p><ol>${L.map((x,i)=>`<li class="${si&&si.includes(i)?'si':''}"><b>${x[0]}</b> ${x[1]}</li>`).join('')}</ol><p><b>Recuerda también:</b> baño → hidrófugo (verde) · local público → DM ignífugo (rojo) · trasera y fondo de cajón → tablex · lacado → DM · uso intensivo → laminado de alta presión · melamina → canto de PVC o ABS · chapa natural o rechapado → canto de chapa o contracanto macizo ${DIAP('53 a 59')}.</p></div>`}
+function genEncargo(r,vez){const grp=vez%2?'A':'B',E=pick(r,ENCARGOS.filter(e=>e.g===grp)),ej=pick(r,ENCARGOS.filter(e=>e.g!==grp));
+ const P=[{t:'demo',tit:'Ejemplo resuelto: elegir el material',vis:()=>({html:guiaHtml(ej,[0,1]),tit:'Guía para elegir'}),html:`<p class="ins">Para cada pieza hay que pensar dónde va a estar y cómo se va a ver ${DIAP(60)}. Por ejemplo, en una cocina:</p><table><tr><th>Pieza</th><th>Material</th><th>Cara</th><th>Canto</th></tr><tr><td>Costado bajo el fregadero</td><td>Aglomerado hidrófugo</td><td>Melamina</td><td>Cinta de PVC o ABS</td></tr><tr><td>Puerta lacada</td><td>DM hidrófugo</td><td>Lacado</td><td>No lleva canto</td></tr><tr><td>Trasera</td><td>Tablex</td><td>Ninguno: va en bruto</td><td>No lleva canto</td></tr></table><p class="ins" style="margin-top:8px">Si una pieza admite varias soluciones correctas, el juego acepta cualquiera de ellas.</p>`}];
+ P.push({t:'encargo',tit:'El encargo: '+E.n,enun:`<b>${esc(E.cli)}</b> Elige para cada pieza el material, el revestimiento de la cara y el canto, y pulsa <b>Comprobar</b>.`,E,vis:()=>({svg:muebleSvg(E),tit:E.n}),ay:()=>guiaHtml(E,grp==='A'?[0,1,5]:[0,1,4,5]),filas:E.pz.map(([n,u])=>({n,u}))});
+ if(grp==='A')P.push({t:'elige',tit:'Antes de mecanizar',enun:'Vas a cortar y fresar el DM de este encargo. ¿Qué medida de PRL exige?',vis:()=>({svg:muebleSvg(E)}),...opsCon(r,'Siempre con aspiración y mascarilla: genera un polvo muy fino',['Guantes al cortar en la escuadradora','Ninguna especial','Basta con abrir la ventana']),pista:'El DM genera un polvo muy fino '+DIAP(54),exp:'Correcto: aspiración y mascarilla.'});
+ else P.push({t:'aviso',tit:'Antes de mecanizar',vis:()=>({svg:muebleSvg(E)})});
+ P.push({t:'elige',tit:'¿Por qué tableros?',enun:'¿Qué límites de la madera maciza resuelven los tableros?',vis:()=>({svg:muebleSvg(E)}),...opsCon(r,'Ancho limitado por el tronco, movimientos con la humedad, defectos y precio de las piezas anchas y limpias',['Que la madera maciza no se puede barnizar','Que la madera maciza no se puede clavar','Que la madera maciza pesa menos']),pista:'Repasa por qué existen los tableros '+DIAP(50),exp:'Correcto: los tableros dan grandes formatos, más estables y homogéneos, y aprovechan restos de madera.'});
+ P.dat={encargo:E.n,grupo:grp,E};return P}
+const GEN={cal:(r)=>genCal(r),tronco:genTronco,humedad:genHumedad,tablas:genTablas,fichas:genFichas,tableros:genTableros,encargo:(r,v)=>genEncargo(r,v)};
+
+/* ====================================================================
+   MOTOR DEL JUEGO: estado G, pasos, puntuación, dibujo de pantallas
+   ==================================================================== */
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const dlP=(window.claude&&claude.use)?claude.use('downloads'):Promise.resolve(null);
+let G=null,REV=false;
+const pad=n=>String(n).padStart(2,'0');
+function nuevo(){return {fase:'inicio',nombre:'',f:{},a:{},ek:new Set(),ip:{},st:{},ins:{},msg:null,rec:{},vb:null,P:{}}}
+function notaB(k){return Math.max(0,10-(G.f[k]||0)*.25-(G.a[k]||0)*.5)}
+function nota(){let t=0,w=0;for(const k in PESO){t+=PESO[k]*notaB(k);w+=PESO[k]}return Math.round(t/w*100)/100}
+const pesoPc=k=>PESO[k];
+const apto=()=>nota()>=5&&notaB('encargo')>=5;
+const VECES={};function cuentaIntento(n){const k='intentos-'+JUEGO+':'+normal(n);let v=VECES[k]||0;try{v=Math.max(v,+localStorage.getItem(k)||0)}catch(e){}v++;VECES[k]=v;try{localStorage.setItem(k,v)}catch(e){}return v}
+function genera(){G.P={};for(const f of ORDEN){const P=GEN[f](rngDe(G.nombre,G.intento,f),G.vez);P.push({t:'finfase'});G.P[f]=P}}
+function empieza(n,gi,gv){G.nombre=n.trim().replace(/\s+/g,' ');G.intento=gi||1+Math.floor(Math.random()*999999);G.vez=gv||cuentaIntento(n);G.t0=Date.now();genera();for(const f of ORDEN){G.ip[f]=0;G.f[f]=0;G.a[f]=0}G.fase='cal';G.st={};G.msg=null;G.vb=null;pinta()}
+const paso=()=>{const L=G.P[G.fase];return L?L[G.ip[G.fase]]:null};
+/* cada error resta 0,25 una sola vez: repetir lo mismo sin cambiar nada no vuelve a restar */
+function errar(clave){const k=G.fase+'|'+G.ip[G.fase]+'|'+clave;if(G.ek.has(k))return false;G.ek.add(k);if(G.fase!=='cal')G.f[G.fase]=(G.f[G.fase]||0)+1;return true}
+function msgM(t,resta){G.msg=[t+(resta&&G.fase!=='cal'?' <b>(−0,25)</b>':resta===false?' <span class="ayu">(ya lo habías intentado: no vuelve a restar)</span>':''),'mal']}
+function hecho(exp){G.st.hecho=true;G.msg=[exp||'Correcto.','bien'];autoGuarda();pinta();setTimeout(()=>{const b=$('[data-a="sig"]');if(b)b.focus()},30)}
+function siguiente(){const L=G.P[G.fase];G.ip[G.fase]++;G.st={};G.msg=null;G.vb=null;
+ const p=paso();if(p&&p.t==='aviso')resuelveAviso(p);
+ if(G.ip[G.fase]>=L.length){const i=ORDEN.indexOf(G.fase);if(i<ORDEN.length-1){G.fase=ORDEN[i+1];G.ip[G.fase]=G.ip[G.fase]||0}else{G.fase='fin';emitir()}}
+ autoGuarda();pinta();$('#der').scrollTop=0}
+function resuelveAviso(p){const sel=(G.rec.enc||[]).map(x=>x.m).map(m=>ESP.find(e=>e.n===m)).filter(Boolean),E=G.P.encargo.dat.E,cand=E.pz.flatMap(([n,u])=>USOS[u].m).map(m=>ESP.find(e=>e.n===m)).filter(Boolean),e=sel[0]||cand[0]||esp('iro'),r=RNG(semilla(G.nombre+'#'+G.intento+'#aviso'));
+ const AV=AVISOS.filter(a=>a[1].includes(e.id)),NO=AVISOS.filter(a=>!a[1].includes(e.id)).map(a=>a[0]);Object.assign(p,{t:'elige',enun:`Vas a trabajar el <b>${e.n.toLowerCase()}</b> de este encargo. ¿Qué aviso da su ficha sobre cómo se trabaja?`,...opsCon(r,pick(r,AV)[0],NO),pista:'Busca el apartado «Mecanización» de su ficha '+DIAP(29),exp:'Correcto.',vis:()=>({html:fichaHtml(e,false),tit:'Ficha de '+e.n.toLowerCase()})})}
+
+/* ---------- pantalla ---------- */
+function MSG(){return G.msg?`<div class="msg ${G.msg[1]}" role="status">${G.msg[0]}</div>`:''}
+function pinta(){const f=G.fase,ix=FASES.findIndex(x=>x[0]===f);
+ $('#etapas').innerHTML=FASES.map((x,i)=>`<span class="${i<ix?'hecho':i===ix?'ya':''}">${x[1]}</span>`).join('');$('#nota').textContent=coma(nota());
+ $('#app').className=f==='fin'||f==='prof'?'ancho':'';
+ pintaVis();
+ $('#der').innerHTML=(REV&&f!=='prof'?revBarra():'')+barraG(f)+(f==='inicio'?pInicio():f==='fin'?pFin():f==='prof'?pProf():pPaso())}
+function visActual(){const p=paso();if(G.fase==='inicio')return {svg:troncoSvg(troncoNuevo(RNG(2026)),{}),tit:'Del árbol al mueble'};if(!p)return {html:''};
+ if(p.t==='finfase')return {html:resumenFase(G.fase,true)};
+ if(G.st.ayV&&p.ay&&p.t!=='etiq'){const a=p.ay(G.st.ayL);if(typeof a==='string'&&a.startsWith('<svg'))return {svg:a,tit:'Ayuda gráfica'};if(typeof a==='string'&&a.startsWith('<div'))return {html:a,tit:'Ayuda gráfica'}}
+ if(p.t==='etiq'){const m=marcasEtq(G.st.pl||{},p.nom)+(G.st.ayV&&G.st.ayL?p.ay(G.st.ayL):'');return {svg:p.svg(m),tit:'Coloca las etiquetas'}}
+ if(p.t==='listones')return {svg:listonesSvg(G.st.e||p.ini,G.st.hecho?'ok':G.st.res),tit:'Tablero alistonado'};
+ return p.vis?p.vis():{html:''}}
+function pintaVis(){const v=visActual(),h=$('#hoja');if(!v)return;h.className=v.html!==undefined&&!v.svg?'html':'';
+ $('#vtabs').innerHTML=`<span class="tit">${esc(v.tit||'')}</span>`+(v.svg?`<span class="zoom"><button data-a="zoom" data-v="1" aria-label="Acercar">+</button><button data-a="zoom" data-v="-1" aria-label="Alejar">−</button><button data-a="zoom" data-v="0">Ajustar</button></span>`:'');
+ h.innerHTML=v.svg||v.html||'';aplicaVb()}
+function aplicaVb(){const sv=$('#hoja svg');if(sv)sv.setAttribute('viewBox',(G.vb||[0,0,VW,VH]).map(F).join(' '))}
+function zoom(k,px=.5,py=.5){const v=G.vb?[...G.vb]:[0,0,VW,VH];if(k===0){G.vb=null;aplicaVb();return}const f=k>0?.72:1/.72,w=Math.min(VW,v[2]*f),h=w*VH/VW,cx=v[0]+v[2]*px,cy=v[1]+v[3]*py;G.vb=w>=VW?null:[Math.max(0,Math.min(VW-w,cx-w*px)),Math.max(0,Math.min(VH-h,cy-h*py)),w,h];aplicaVb()}
+function aSvg(cx,cy){const sv=$('#hoja svg');if(!sv)return null;const pt=sv.createSVGPoint();pt.x=cx;pt.y=cy;const m=sv.getScreenCTM();if(!m)return null;const q=pt.matrixTransform(m.inverse());return [q.x,q.y]}
+
+const INS={cal:'Un calentamiento rápido sobre la madera como material del futuro. <b>No cuenta para la nota.</b>',tronco:'Vas a estudiar tu propio tronco: sus partes, su edad, las secciones de la madera y cómo se despieza. Cada alumno tiene un tronco distinto, que cambia en cada intento.',humedad:'Calcula la humedad de tu madera, decide si se puede usar, calcula cuánto merma y piensa cómo se deforma al secarse.',tablas:'Revisa una pila de tablas del almacén: encuentra el defecto de cada una y decide qué haces con ella. Después encola un tablero alistonado.',fichas:'Lee e interpreta fichas técnicas de especies: averigua qué especie es, ordénalas y calcula el peso de una pieza.',tableros:'Identifica muestras de tableros mirando su canto, su cara y su color, y responde sobre cada una.',encargo:'Llega un encargo de verdad: elige el material, el revestimiento y el canto de cada pieza. <b>Es la fase clave:</b> para ser apto necesitas un 5 en ella.'};
+function pPaso(){const p=paso(),f=G.fase,L=G.P[f],i=G.ip[f],tot=L.length-1;if(!p)return '';
+ let o='';if(!G.ins[f]&&p.t!=='finfase')o+=`<div class="por grande"><b class="t">${FASES.find(x=>x[0]===f)[1]}</b>${INS[f]}<br><span class="ayu" style="font-size:15px">Cada fallo resta 0,25 y te da una pista. No se avanza con una respuesta mal: puedes intentarlo las veces que haga falta. Si en un paso aparece el botón de ayuda gráfica, usarla resta 0,5.</span><button class="x" data-a="insX" aria-label="Cerrar instrucciones">×</button></div>`;
+ if(p.t==='finfase')return o+resumenFase(f,false);
+ o+=`<div class="paso">${FASES.find(x=>x[0]===f)[1]} · paso ${i+1} de ${tot}${G.ins[f]?` · <a href="#" data-a="insO" style="color:var(--ink2)">instrucciones</a>`:''}</div><h2>${esc(p.tit||'')}</h2>`;
+ if(p.t==='demo')return o+`<div class="por"><b class="t">Ejemplo resuelto</b>No cuenta para la nota.</div>${p.html}<div class="fila" style="margin-top:12px"><button class="pri" data-a="sig">Entendido, empiezo</button></div>`;
+ if(p.enun)o+=`<p class="enun">${p.enun}</p>`;
+ o+=({elige:cElige,num:cNum,lag:cLag,multi:cMulti,etiq:cEtiq,orden:cOrden,listones:cListones,encargo:cEncargo}[p.t]||(()=>''))(p);
+ o+=MSG();
+ if(p.ay&&!G.st.hecho&&f!=='cal')o+=`<div class="fila" style="margin:6px 0"><button class="sec" data-a="ayuda" ${p.t==='etiq'&&!G.st.sel?'disabled':''}>${G.st.ayV?'Ayuda gráfica activada':'Ayuda gráfica (−0,5)'}</button><span class="ayu">${p.t==='etiq'?'Elige antes una etiqueta: la ayuda señala dónde va. ':''}${G.st.ayV&&p.t!=='etiq'?'<a href="#" data-a="ayNo" style="color:var(--ink2)">volver al dibujo</a>':''}</span></div>`;
+ if(G.st.hecho)o+=`<div class="fila" style="margin-top:8px"><button class="pri" data-a="sig">Siguiente →</button></div>`;
+ return o}
+function cElige(p){const st=G.st,ops=p.ops;return `<div class="ops">${ops.map((t,i)=>{const mal=(st.mal||[]).includes(i),bien=st.hecho&&(p.libre?i===p.sol:i===st.ok);return `<button class="op${mal?' mal':''}${bien?' bien':''}" data-a="op" data-v="${i}" ${st.hecho?'disabled':''}><i>${'ABCDEFGH'[i]}</i><span>${esc(t)}</span></button>`}).join('')}</div>`}
+function cNum(p){const st=G.st;st.ok=st.ok||{};return p.campos.map(c=>{const ok=st.ok[c.id],v=ok?n1(c.sol):(st.v&&st.v[c.id])||'';return `<div class="campo"><label for="nf-${c.id}">${esc(c.et)}</label><input id="nf-${c.id}" data-nf="${c.id}" inputmode="decimal" autocomplete="off" class="${ok?'ok':st.mal&&st.mal[c.id]?'mal':''}" value="${esc(ok?(c.dec?Number(c.sol).toFixed(c.dec).replace('.',','):v):v)}" ${ok?'readonly':''}><span>${esc(c.u||'')}</span></div>`}).join('')+(st.hecho?'':`<p class="ayu">Escribe el número y pulsa <b>Intro</b> (o la tecla de tabulación). La coma o el punto valen como separador decimal.</p>`)}
+function cLag(p){const st=G.st;return `<div class="campo ancho"><input id="lag" data-lag="1" autocomplete="off" placeholder="largo x ancho x grueso" class="${st.hecho?'ok':st.malv?'mal':''}" value="${esc(st.v||'')}" ${st.hecho?'readonly':''}></div>${st.hecho?'':'<p class="ayu">Escribe las tres medidas en mm y pulsa <b>Intro</b>.</p>'}`}
+function cMulti(p){const st=G.st;st.ok=st.ok||{};st.v=st.v||{};return p.items.map((it,i)=>`<div class="sel2"><label for="mi${i}"><b>${esc(it.et)}</b></label><select id="mi${i}" data-mi="${i}" class="${st.ok[i]?'ok':st.mal&&st.mal[i]?'mal':''}" ${st.ok[i]?'disabled':''}><option value="">Elige…</option>${it.ops.map(o=>`<option ${st.v[i]===o?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`).join('')+(st.hecho?'':`<div class="fila"><button class="pri" data-a="mcomp">Comprobar</button></div>`)}
+function cEtiq(p){const st=G.st;st.pl=st.pl||{};return `<div class="chips">${p.labs.map(l=>`<button class="chip${st.pl[l.id]?' ok':st.sel===l.id?' sel':''}" data-chip="${l.id}" ${st.pl[l.id]?'disabled':''}>${st.pl[l.id]?'✓ ':''}${esc(l.n)}</button>`).join('')}</div>${st.hecho?'':`<p class="ayu">${st.sel?`Ahora pulsa en el dibujo donde va <b>${esc(p.labs.find(l=>l.id===st.sel).n)}</b>.`:'Pulsa una etiqueta o arrástrala al dibujo.'}</p>`}`}
+function cOrden(p){const st=G.st;st.o=st.o||[...p.items];return `<div class="ord">${st.o.map((id,i)=>`<div><b>${i+1}</b><span>${esc(p.nom(id))}</span>${st.hecho?'':`<button data-a="oup" data-v="${i}" aria-label="Subir" ${i?'':'disabled'}>▲</button><button data-a="odn" data-v="${i}" aria-label="Bajar" ${i<st.o.length-1?'':'disabled'}>▼</button>`}</div>`).join('')}</div>${st.hecho?'':'<div class="fila"><button class="pri" data-a="ocomp">Comprobar</button></div>'}`}
+function cListones(p){const st=G.st;st.e=st.e||[...p.ini];return st.hecho?'':`<div class="fila"><button class="pri" data-a="lcomp">Comprobar</button><span class="ayu">Pulsa en el dibujo sobre un listón para voltearlo.</span></div>`}
+function cEncargo(p){const st=G.st;st.v=st.v||p.filas.map(()=>({m:'',r:'',c:''}));st.ok=st.ok||p.filas.map(()=>({}));st.mal=st.mal||p.filas.map(()=>({}));
+ const sel=(i,k,L)=>`<select data-ef="${i}:${k}" class="${st.ok[i][k]?'ok':st.mal[i][k]?'mal':''}" ${st.ok[i][k]||st.hecho?'disabled':''} aria-label="${k} de ${esc(p.filas[i].n)}"><option value="">Elige…</option>${L.map(o=>`<option ${st.v[i][k]===o?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
+ return `<table class="enc"><tr><th>Pieza</th><th>Material</th><th>Revestimiento de la cara</th><th>Canto</th></tr>${p.filas.map((f,i)=>`<tr><td class="pz"><span class="nc">${i+1}</span>${esc(f.n)}<span class="cond">${esc(USOS[f.u].t)}</span></td><td data-l="Material">${sel(i,'m',MATS)}</td><td data-l="Revestimiento de la cara">${sel(i,'r',REV_OPS)}</td><td data-l="Canto">${sel(i,'c',CANTO_OPS)}</td></tr>`).join('')}</table>${st.pistas&&st.pistas.length&&!st.hecho?`<ul class="ayu" style="margin:8px 0;padding-left:18px">${st.pistas.map(t=>`<li>${t}</li>`).join('')}</ul>`:''}${st.hecho?'':'<div class="fila" style="margin-top:8px"><button class="pri" data-a="ecomp">Comprobar</button><span class="ayu">Se comprueban todas las casillas a la vez; cada casilla mal resta 0,25.</span></div>'}`}
+function resumenFase(f,vis){const i=ORDEN.indexOf(f),sig=ORDEN[i+1];if(vis)return `<div class="guiaE"><p style="font:700 28px Barlow Condensed,Arial;margin:0 0 6px">${f==='cal'?'Calentamiento terminado':'Fase terminada: '+NOMF[f]}</p>${f==='cal'?'<p>Ahora empieza lo que cuenta para la nota.</p>':`<p style="font-size:20px">Nota de la fase: <b>${coma(notaB(f))}</b></p><p>Errores: ${G.f[f]||0} · Ayudas gráficas: ${G.a[f]||0}</p>`}</div>`;
+ return `<h2>${f==='cal'?'Calentamiento terminado':'Fase terminada'}</h2>${f==='cal'?'<p class="ins">Ya conoces por qué la madera es uno de los mejores materiales que existen. Ahora empiezan las fases que cuentan para la nota.</p>':`<p class="enun">${NOMF[f]}: nota <b>${coma(notaB(f))}</b> · ${G.f[f]||0} errores · ${G.a[f]||0} ayudas gráficas.</p>`}<div class="fila"><button class="pri" data-a="sig">${sig?'Seguir: '+(FASES.find(x=>x[0]===sig)[1]):'Ver el certificado'}</button></div>`}
+
+/* ---------- comprobaciones ---------- */
+function numDe(t){const v=parseFloat(String(t).trim().replace(/\s/g,'').replace(',','.'));return isFinite(v)?v:null}
+function compNum(id,val){const p=paso(),c=p.campos.find(x=>x.id===id),st=G.st;if(!c||(st.ok&&st.ok[id])||st.ult===id+'='+val)return;st.ult=id+'='+val;st.v=st.v||{};st.v[id]=val;st.mal=st.mal||{};if(!String(val).trim())return;const v=numDe(val);
+ if(v!==null&&Math.abs(v-(c.ex!==undefined?c.ex:c.sol))<=c.tol+1e-9){st.ok[id]=true;st.mal[id]=false;G.msg=null;if(p.campos.every(x=>st.ok[x.id]))return hecho(p.exp);pinta();const nx=p.campos.find(x=>!st.ok[x.id]);if(nx)setTimeout(()=>{const e=$('#nf-'+nx.id);if(e)e.focus()},20);return}
+ st.mal[id]=true;const pi=typeof p.pista==='function'?p.pista(v):typeof p.pista==='object'?p.pista[id]:p.pista;msgM((v===null?'Escribe un número. ':'No es correcto. ')+pi,v===null?undefined:errar(id+'='+v));pinta();setTimeout(()=>{const e=$('#nf-'+id);if(e){e.focus();e.select()}},20)}
+function compLag(val){const p=paso(),st=G.st;if(st.hecho||st.ult===val)return;st.ult=val;st.v=val;const N=(String(val).match(/\d+(?:[.,]\d+)?/g)||[]).map(x=>+x.replace(',','.'));if(!N.length)return;
+ if(N.length===3&&N.every((v,i)=>v===p.sol[i]))return hecho(p.exp);st.malv=true;
+ const mismo=N.length===3&&[...N].sort((a,b)=>a-b).join()===[...p.sol].sort((a,b)=>a-b).join();msgM(N.length!==3?'Hacen falta tres medidas: largo, ancho y grueso. '+p.pista:mismo?'Las medidas son esas, pero no están en su orden. '+p.pista:'Alguna medida no es la de la pieza. Léelas en las cotas del dibujo. '+p.pista,N.length===3?errar('lag='+N.join('x')):undefined);pinta()}
+function compElige(i){const p=paso(),st=G.st;if(st.hecho)return;if(p.libre){st.ok=p.sol;st.mal=i===p.sol?[]:[i];G.st.hecho=true;G.msg=[(i===p.sol?'¡Bien! ':'No. ')+p.exp,i===p.sol?'bien':'mal'];autoGuarda();pinta();return}
+ if(i===p.sol){st.ok=i;return hecho(p.exp)}st.mal=[...new Set([...(st.mal||[]),i])];msgM('No es correcto. '+(Array.isArray(p.pista)?p.pista[i]:p.pista),errar('op'+i));pinta()}
+function compMulti(){const p=paso(),st=G.st;st.mal={};let ps=[],res=undefined,falta=false;p.items.forEach((it,i)=>{if(st.ok[i])return;const v=st.v[i];if(!v){falta=true;return}if(v===it.sol)st.ok[i]=true;else{st.mal[i]=true;const e=errar('m'+i+'='+v);res=res||e;ps.push(`${it.et}: ${p.pista[v]||''}.`)}});
+ if(p.items.every((it,i)=>st.ok[i]))return hecho(p.exp);if(ps.length)msgM('Hay alguna mal. '+ps.join(' ')+' '+(p.ref||''),res);else if(falta)G.msg=['Elige una opción en cada pieza.','mal'];pinta()}
+function colocar(id,x,y){const p=paso(),st=G.st;if(st.hecho||(st.pl&&st.pl[id]))return;const z=p.zona(x,y);if(z===id){st.pl[id]=[x,y];st.sel=null;st.ayV=false;G.msg=['Bien: '+p.nom[id].toLowerCase()+'.','bien'];if(p.labs.every(l=>st.pl[l.id]))return hecho('Todas las etiquetas en su sitio.');pinta();return}
+ msgM('No va ahí. '+p.pista(id,z),errar(id+'@'+(z||'fuera')));pinta()}
+function compOrden(){const p=paso(),st=G.st,ok=st.o.every((id,i)=>!i||p.val(st.o[i-1])<p.val(id));if(ok)return hecho(p.exp);const k=st.o.findIndex((id,i)=>i&&p.val(st.o[i-1])>p.val(id));msgM(`No es correcto: revisa a partir de la posición ${k}. `+p.pista,errar('o='+st.o.join(',')));pinta()}
+function compListones(){const p=paso(),st=G.st,ok=st.e.every((v,i)=>!i||v!==st.e[i-1]);if(ok){st.res='ok';return hecho(p.exp)}st.res='mal';msgM('Así el tablero se abarquilla. '+p.pista,errar('l='+st.e.map(v=>+v).join('')));pinta()}
+function compEncargo(){const p=paso(),st=G.st;st.pistas=[];let falta=false,res;
+ p.filas.forEach((fi,i)=>{const U=USOS[fi.u],v=st.v[i],ok=st.ok[i];st.mal[i]={};
+  if(!ok.m){if(!v.m)falta=true;else if(U.m.includes(v.m))ok.m=true;else{st.mal[i].m=true;res=errar(i+'m='+v.m)||res;st.pistas.push(`<b>${i+1}. ${esc(fi.n)}</b> · material: ${U.p}.`)}}
+  if(!ok.r){if(!v.r)falta=true;else if(U.r.includes(v.r)&&(ok.m?revValido(v.m,v.r):U.m.some(m=>revValido(m,v.r))))ok.r=true;else{st.mal[i].r=true;res=errar(i+'r='+v.r+'|'+v.m)||res;st.pistas.push(`<b>${i+1}. ${esc(fi.n)}</b> · revestimiento: ${!U.r.includes(v.r)?'no es el adecuado para esta pieza. '+U.p:'no se aplica sobre '+esc(v.m)+'. Lacado sobre DM; melamina sobre aglomerado o DM; la madera maciza no se reviste'}.`)}}
+  if(!ok.c&&ok.r&&ok.m){if(!v.c)falta=true;else if(cantosOk(v.m,v.r).includes(v.c))ok.c=true;else{st.mal[i].c=true;res=errar(i+'c='+v.c+'|'+v.r)||res;st.pistas.push(`<b>${i+1}. ${esc(fi.n)}</b> · canto: melamina → cinta de PVC o ABS; chapa natural o rechapado → chapa o contracanto macizo; madera maciza y tablex no llevan canto ${DIAP(55)}.`)}}
+  });
+ const todo=p.filas.every((f,i)=>st.ok[i].m&&st.ok[i].r&&st.ok[i].c);if(todo){G.rec.enc=st.v.map((v,i)=>({n:p.filas[i].n,...v}));return hecho('El encargo está bien resuelto: cada pieza tiene el material, el revestimiento y el canto adecuados.')}
+ if(st.pistas.length)msgM('Hay casillas mal (en rojo). Lee las pistas debajo de la tabla.',res);else G.msg=[falta?'Rellena todas las casillas. El canto se comprueba cuando el material y el revestimiento están bien.':'Elige el canto de las piezas que faltan.','mal'];pinta()}
+function usarAyuda(){const p=paso(),st=G.st;if(!p.ay||st.hecho)return;if(p.t==='etiq'&&!st.sel)return;const k='ay|'+(p.t==='etiq'?st.sel:'');if(errarAy(k)){}st.ayV=true;st.ayL=st.sel;pintaVis();$('#der').innerHTML=(REV?revBarra():'')+barraG(G.fase)+pPaso();$('#nota').textContent=coma(nota())}
+function errarAy(c){const k=G.fase+'|'+G.ip[G.fase]+'|'+c;if(G.ek.has(k))return false;G.ek.add(k);G.a[G.fase]=(G.a[G.fase]||0)+1;return true}
+
+/* ====================================================================
+   INICIO, CERTIFICADO, GUARDADO, PROFESORADO Y EVENTOS
+   ==================================================================== */
+const AUTORIA='© 2026 Gustavo Hernández Sánchez. Uso educativo libre y gratuito citando al autor. No se permite el uso comercial ni retirar esta mención.';
+function pInicio(){return `<h2>${TITULO}</h2><p class="ins">Trabajas en el almacén de un taller. Te llega un tronco: estudias sus partes, controlas su humedad y su secado, revisas las tablas, lees las fichas de las especies, reconoces los tableros y, al final, eliges el material de un <b>encargo de verdad</b>.</p><div class="por"><b class="t">Importante</b>Cada alumno tiene su propio tronco, sus tablas, sus fichas, sus muestras y su encargo, y cambian cada vez que empiezas. Las respuestas de un compañero o de un intento anterior no te sirven.</div>
+ ${MSG()}<label class="et" for="nom">Nombre y apellidos</label><input class="txt" id="nom" autocomplete="off" placeholder="Saldrán en tu certificado"><div class="fila"><button class="pri" data-a="empezar">Empezar</button><button class="sec" data-a="gcont">Continuar partida</button></div>
+ <div style="border:2px solid #c8891e;background:#fff6e0;color:#3a2a10;border-radius:8px;padding:10px 14px;margin:12px 0;font-size:15px;line-height:1.45"><b style="font-size:17px">💾 Puedes dejarlo y seguir otro día</b><br><b>En este mismo ordenador:</b> la partida se guarda sola. Al volver, escribe tu nombre y pulsa «Continuar partida».<br><b>En otro ordenador:</b> antes de irte pulsa «Guardar en un archivo» (arriba, durante el juego) y llévate el archivo <i>Partida_tu nombre.txt</i> en un lápiz de memoria o en tu Drive. En el otro ordenador pulsa «Continuar partida» y elige ese archivo.<br>Si lo dejas a mitad de un paso, ese paso empieza de nuevo; lo anterior y los errores se conservan.</div>
+ <p class="ayu" style="margin:10px 0">${AUTORIA}</p>
+ <div class="banda" style="margin-top:14px">Cómo se juega</div><table><tr><td>Calentamiento</td><td>La madera como material del futuro. No cuenta para la nota.</td></tr><tr><td>1 · El tronco (${PESO.tronco} %)</td><td>Partes del tronco, edad, anillos, secciones, despiece y nombres de la pieza.</td></tr><tr><td>2 · Humedad (${PESO.humedad} %)</td><td>Contenido de humedad, secado, merma y abarquillado.</td></tr><tr><td>3 · Tablas (${PESO.tablas} %)</td><td>Defectos de las tablas y encolado de un alistonado.</td></tr><tr><td>4 · Fichas (${PESO.fichas} %)</td><td>Leer fichas técnicas de especies, ordenarlas y calcular el peso de una pieza.</td></tr><tr><td>5 · Tableros (${PESO.tableros} %)</td><td>Identificar tableros derivados y sus revestimientos.</td></tr><tr><td>6 · El encargo (${PESO.encargo} %)</td><td>Elegir el material, el revestimiento y el canto de cada pieza de un mueble.</td></tr><tr><td>Certificado</td><td>Descárgalo en PDF y súbelo a Classroom.</td></tr></table>
+ <p class="ins" style="margin-top:8px">Se parte de 10 en cada fase. <b>Cada error resta 0,25</b> y cada ayuda gráfica, 0,5. Para ser <b>apto</b> hace falta un 5 en la nota final y un 5 en el encargo. Puedes repetir el juego cuantas veces quieras.</p>`}
+function pFin(){const ap=apto();return `<h2>Trabajo terminado</h2><div class="por" style="border-color:${ap?'var(--ve)':'var(--ro)'}"><b class="t" style="color:${ap?'var(--ve)':'var(--ro)'}">${ap?'Apto':'Todavía no apto'}</b>${ap?'Conoces la madera y sus derivados y sabes elegir el material adecuado para cada pieza.':'Para ser apto hace falta un 5 o más en la nota final y también en el encargo. Puedes repetir el juego: te saldrá un caso nuevo.'}</div><p class="ins"><b>${esc(G.nombre)}</b> · Nota <b>${coma(nota())}</b> · Intento <b>${G.vez||'—'}</b>${G.mins?` · Tiempo <b>${G.mins} min</b>`:''}</p><p class="ins">${Object.keys(PESO).map(k=>`${NOMF[k]} (${pesoPc(k)} %) <b>${coma(notaB(k))}</b>`).join(' · ')}</p>${G.cert?`<div class="fila" style="margin:4px 0 6px;gap:8px"><button class="pri" data-a="desc">Descargar certificado (PDF)</button><button class="sec" data-a="otra">Volver a empezar</button></div><p class="ayu" style="margin:0 0 10px">Súbelo a la tarea de Classroom. Si no se descarga, haz una captura de esta pantalla.</p>${MSG()}<img class="cert" src="${G.cert.img}" alt="Certificado de ${esc(G.nombre)}"><span class="cod">${G.cert.cod}</span>`:`<p class="ayu">Preparando el certificado…</p>${MSG()}<button class="sec" data-a="otra">Volver a empezar</button>`}<p class="ayu">${AUTORIA}</p>`}
+
+/* ---------- certificado ---------- */
+async function sha(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+const firma=async(n,d)=>(await sha(SECRETO+'|'+normal(n)+'|'+d)).slice(0,8).toUpperCase();
+const HIST={};function historial(n,rec){const k='historial-'+JUEGO+':'+normal(n);let L=HIST[k]||[];try{const g=JSON.parse(localStorage.getItem(k)||'[]');if(Array.isArray(g)&&g.length>=L.length)L=g}catch(e){}L=L.filter(r=>r.v!==rec.v);L.push(rec);L.sort((a,b)=>a.v-b.v);HIST[k]=L;try{localStorage.setItem(k,JSON.stringify(L))}catch(e){}return L}
+function centro(){try{const c=new URLSearchParams(location.search).get('c');return c?c.replace(/[<>&"'`]/g,'').replace(/\s+/g,' ').trim().slice(0,60):''}catch(e){return ''}}
+const KF=Object.keys(PESO);
+async function emitir(){const d=new Date(),f=`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}`,mins=Math.max(1,Math.round((Date.now()-G.t0)/60000));G.mins=mins;
+ const datos=[Math.round(nota()*100),...KF.map(k=>G.f[k]||0),...KF.map(k=>G.a[k]||0),G.intento,G.vez,mins,f].join('-'),cod=REV?'REVISIÓN DEL PROFESOR · SIN VALIDEZ':`${datos}-${await firma(G.nombre,datos)}`;
+ G.hist=historial(G.nombre,{v:G.vez,n:nota(),m:mins,f:`${pad(d.getDate())}/${pad(d.getMonth()+1)}`});
+ const T=G.P.tronco.T;let im=null;try{im=await svgImg(troncoSvg(T,{marcas:leyendaTronco(T)}))}catch(e){}
+ let im2=null;try{im2=await svgImg(muebleSvg(G.P.encargo.dat.E))}catch(e){}
+ G.cert={cod,img:lienzo(d,cod,mins,im,im2).toDataURL('image/jpeg',.9)};pinta()}
+function svgImg(s){return new Promise((ok,ko)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=ko;i.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s)})}
+function lienzo(d,cod,mins,im,im2){const C=document.createElement('canvas');C.width=1684;C.height=1190;const x=C.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,1684,1190);x.fillStyle='#1C2B28';x.fillRect(0,0,1684,110);
+ const t=(s,a,b,f,col='#17201C',al='left')=>{x.fillStyle=col;x.font=f;x.textAlign=al;x.fillText(s,a,b)},B='Barlow,Arial,sans-serif',N='"IBM Plex Mono",monospace',D='"Barlow Condensed",Arial,sans-serif';
+ t(TITULO+' · la madera y sus derivados',50,72,'700 44px '+D,'#fff');t(centro()||'IES Virgen de la Esperanza',1634,70,'500 24px '+B,'#CFE0DA','right');
+ t(G.nombre,50,170,'600 42px '+B);t(`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} · ${pad(d.getHours())}:${pad(d.getMinutes())}h · ${mins} min de juego · Intento ${G.vez}`,50,208,'500 23px '+B,'#55615B');
+ const CORTO={tronco:'Tronco',humedad:'Humedad',tablas:'Tablas',fichas:'Fichas',tableros:'Tableros',encargo:'Encargo'},dato=(a,e,v)=>{t(e,a,258,'500 20px '+B,'#55615B');t(v,a,300,'600 36px '+N)};dato(50,'Nota',coma(nota()));KF.forEach((k,i)=>dato(200+i*178,`${CORTO[k]} · ${PESO[k]} %`,coma(notaB(k))));
+ {const ap=apto(),cx=1500,cy=226,R=84,oro=ap?'#C79A1E':'#B9C2BD';x.save();
+  if(ap){for(const sd of[-1,1])for(let i=0;i<10;i++){const a=Math.PI/2+sd*(.3+i*.265),px=cx+(R+13)*Math.cos(a),py=cy+(R+13)*Math.sin(a);for(const tl of[-.55,.55]){x.save();x.translate(px,py);x.rotate(a-sd*Math.PI/2+tl*sd);x.beginPath();x.ellipse(0,0,18,6.6,0,0,7);x.fillStyle=tl<0?'#D9B23A':'#B88A12';x.fill();x.restore()}}
+   x.strokeStyle='#B88A12';x.lineWidth=3;x.beginPath();x.arc(cx,cy,R+13,Math.PI/2-.3-9*.265,Math.PI/2+.3+9*.265,true);x.stroke()}
+  x.beginPath();x.arc(cx,cy,R-8,0,7);x.fillStyle=ap?'#FFF8E1':'#F1F3F0';x.fill();x.lineWidth=3;x.strokeStyle=oro;x.stroke();x.restore();
+  t('NOTA',cx,cy-36,'600 18px '+B,'#55615B','center');t(coma(nota()),cx,cy+24,'700 56px '+N,'#17201C','center');t(ap?'APTO':'TODAVÍA NO APTO',cx,cy+R+54,'700 27px '+D,ap?'#8A6A0A':'#8A1A0A','center');
+  t(ap?'Conoce la madera y sus derivados':'Hay que aprobar la nota final',cx,cy+R+78,'500 16px '+B,'#55615B','center');t(ap?'y elige bien el material de cada pieza':'y el encargo. Se puede repetir',cx,cy+R+97,'500 16px '+B,'#55615B','center')}
+ /* tronco del alumno */
+ if(im){x.fillStyle='#F4F1E8';x.fillRect(50,372,620,434);x.drawImage(im,50,372,620,434);x.strokeStyle='#B9C2BD';x.lineWidth=1.5;x.strokeRect(50,372,620,434)}t(`Su tronco: ${G.P.tronco.dat.edad} años`,50,360,'600 22px '+B);
+ /* resumen de su caso */
+ const D2=[['Humedad calculada',coma(G.P.humedad[0].dat.ch,1)+' %'],['Merma',G.P.humedad[0].dat.merma],['Defectos revisados',G.P.tablas.dat.defectos.join(', ')],['Fichas',G.P.fichas.dat.quien.join(' y ')+'; '+G.P.fichas.dat.ficha],['Tableros',G.P.tableros.dat.muestras.join(', ')]];
+ let y=842;D2.forEach(([a,b])=>{t(a,50,y,'600 18px '+B,'#55615B');const w=wrap(x,b,440,'500 18px '+B);w.forEach((l,i)=>t(l,230,y+i*22,'500 18px '+B));y+=Math.max(1,w.length)*22+7});
+ /* encargo */
+ const E=G.P.encargo.dat.E;t('El encargo: '+E.n,710,360,'600 22px '+B);if(im2){x.fillStyle='#F4F1E8';x.fillRect(710,372,430,301);x.drawImage(im2,710,372,430,301);x.strokeStyle='#B9C2BD';x.strokeRect(710,372,430,301)}
+ y=712;[['Pieza',710],['Material',935],['Cara',1160],['Canto',1380]].forEach(h=>t(h[0],h[1],y,'600 17px '+B,'#55615B'));y+=27;const corta=(s,w,f)=>{x.font=f;let c=s;while(x.measureText(c).width>w&&c.length>3)c=c.slice(0,-2);return c===s?s:c+'…'};(G.rec.enc||[]).forEach((r,i)=>{const f='500 17px '+B;t(corta(`${i+1}. ${r.n}`,215,f),710,y,f);t(corta(r.m,215,'600 17px '+B),935,y,'600 17px '+B);t(corta(r.r.replace(' (se barniza, aceita o tiñe)','').replace('Ninguno: va en bruto','En bruto'),210,f),1160,y,f);t(corta(r.c,250,f),1380,y,f);y+=25});
+ {const L=G.hist||[],V=L.slice(-3),R0=1634;t('Intentos terminados',R0,446,'600 24px '+B,'#17201C','right');t('en este navegador',R0,472,'500 19px '+B,'#55615B','right');[['N.º',1440],['Fecha',1520],['Nota',1584],['Min',1634]].forEach(h=>t(h[0],h[1],504,'600 19px '+B,'#55615B','right'));V.forEach((r,i)=>{const y2=532+i*30,ac=r.v===G.vez,f=(ac?'700 ':'500 ')+'20px '+B,fn=(ac?'700 ':'600 ')+'20px '+N;t(String(r.v),1440,y2,f,'#17201C','right');t(r.f,1520,y2,f,'#17201C','right');t(coma(r.n),1584,y2,fn,'#17201C','right');t(String(r.m),1634,y2,f,'#17201C','right')});if(L.length>3)t(`Últimos 3 de ${L.length}`,R0,532+3*30,'500 18px '+B,'#55615B','right')}
+ t('Código de comprobación: ',50,1174,'500 17px '+B,'#55615B');t(cod,250,1174,'600 17px '+N);t('Juego creado por Gustavo Hernández Sánchez',1634,1174,'500 17px '+B,'#55615B','right');return C}
+function wrap(x,s,w,f){x.font=f;const r=[''];String(s).split(' ').forEach(p=>{const k=r.length-1,c=r[k]?r[k]+' '+p:p;if(x.measureText(c).width>w&&r[k])r.push(p);else r[k]=c});return r.slice(0,3)}
+function pdfDesde(u){const bin=atob(u.split(',')[1]),img=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)img[i]=bin.charCodeAt(i);const enc=s=>new TextEncoder().encode(s),tz=[];let pos=0;const off=[],add=b=>{tz.push(b);pos+=b.length};add(enc('%PDF-1.4\n'));const obj=(n,s)=>{off[n]=pos;add(enc(`${n} 0 obj\n${s}\nendobj\n`))};obj(1,'<< /Type /Catalog /Pages 2 0 R >>');obj(2,'<< /Type /Pages /Kids [3 0 R] /Count 1 >>');obj(3,'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /XObject << /I 4 0 R >> >> /Contents 5 0 R >>');off[4]=pos;add(enc(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width 1684 /Height 1190 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${img.length} >>\nstream\n`));add(img);add(enc('\nendstream\nendobj\n'));const c='q 842 0 0 595 0 0 cm /I Do Q';obj(5,`<< /Length ${c.length} >>\nstream\n${c}\nendstream`);const xr=pos;let tb='xref\n0 6\n0000000000 65535 f \n';for(let i=1;i<=5;i++)tb+=String(off[i]).padStart(10,'0')+' 00000 n \n';add(enc(tb+`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xr}\n%%EOF\n`));const out=new Uint8Array(pos);let k=0;tz.forEach(t=>{out.set(t,k);k+=t.length});return out}
+async function descargar(){const data=pdfDesde(G.cert.img),nom='Madera_'+normal(G.nombre).toLowerCase().replace(/(^| )\w/g,c=>c.toUpperCase()).replace(/ /g,'_')+'.pdf',dl=await dlP;if(dl){try{await dl.save({filename:nom,data:new Blob([data],{type:'application/pdf'})});G.msg=['Certificado guardado. Súbelo a la tarea de Classroom.','bien'];pinta()}catch(e){if(e&&e.code!=='declined'){G.msg=['No se ha podido descargar aquí. Haz una captura del certificado y súbela a Classroom.','mal'];pinta()}}}else{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/pdf'}));a.download=nom;document.body.appendChild(a);a.click();a.remove();G.msg=['Certificado guardado. Súbelo a la tarea de Classroom.','bien'];pinta()}}
+async function compCert(n,c){const m=/^(\d+)((?:-\d+){12})-(\d+)-(\d+)-(\d+)-(\d{12})-([0-9A-F]{8})$/.exec(String(c).trim().toUpperCase());if(!m||!n.trim())return {ok:false};const datos=c.trim().toUpperCase().split('-').slice(0,-1).join('-');if(await firma(n,datos)!==m[7])return {ok:false};
+ const v=m[2].slice(1).split('-').map(Number),fa=v.slice(0,6),ay=v.slice(6),fe=m[6];return {ok:true,nota:coma(m[1]/100),fa,ay,int:+m[3],vez:+m[4],min:m[5]+' min',f:`${fe.slice(6,8)}/${fe.slice(4,6)}/${fe.slice(0,4)} ${fe.slice(8,10)}:${fe.slice(10)}h`}}
+
+/* ---------- guardar y continuar la partida, también en otro ordenador ---------- */
+const b64=s=>btoa(unescape(encodeURIComponent(s))),d64=s=>decodeURIComponent(escape(atob(s)));
+async function partidaTxt(){const o={v:1,n:G.nombre,i:G.intento,z:G.vez,fa:G.fase,ip:G.ip,f:G.f,a:G.a,ek:[...G.ek],el:Date.now()-G.t0,ins:G.ins,rec:G.rec},j=JSON.stringify(o);return b64(j)+'.'+(await sha(SECRETO+'|partida|'+normal(o.n)+'|'+j)).slice(0,16)}
+const claveP=n=>'partida-'+JUEGO+':'+normal(n);
+function toast(t){const d=document.createElement('div');d.className='fant';d.style.cssText='left:50%;top:14px;transform:translateX(-50%);max-width:90vw';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),6000)}
+let tAuto=0;function autoGuarda(){if(REV||!G.nombre)return;clearTimeout(tAuto);tAuto=setTimeout(async()=>{try{if(ORDEN.includes(G.fase))localStorage.setItem(claveP(G.nombre),await partidaTxt());else if(G.fase==='fin')localStorage.removeItem(claveP(G.nombre))}catch(e){}},300)}
+function barraG(f){if(ORDEN.includes(f))autoGuarda();return ORDEN.includes(f)&&!REV?`<div class="fila" style="border:2px solid #c8891e;background:#fff6e0;color:#3a2a10;border-radius:8px;padding:8px 12px;margin:0 0 12px;gap:8px 12px;align-items:center;justify-content:space-between;font-size:15px;line-height:1.35"><span style="flex:1;min-width:200px">💾 <b>La partida se guarda sola en este ordenador.</b> ¿Vas a seguir en otro? Guárdala en un archivo.</span><button style="padding:7px 14px;white-space:nowrap;background:#c8891e;color:#fff;border:0;border-radius:6px;font-weight:700;font-size:15px" data-a="gguarda">💾 Guardar en un archivo</button></div>`:''}
+async function guardaArchivo(){const t=await partidaTxt(),nom='Partida_'+normal(G.nombre).toLowerCase().replace(/ /g,'_')+'.txt',blob=new Blob([t],{type:'text/plain'}),dl=await dlP;try{if(dl)await dl.save({filename:nom,data:blob});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nom;document.body.appendChild(a);a.click();a.remove()}toast('Partida guardada en '+nom+'. Llévate el archivo para continuar en otro ordenador.')}catch(e){}}
+async function cargaPartida(txt){try{const[b,fi]=txt.trim().split('.'),j=d64(b),o=JSON.parse(j);if((await sha(SECRETO+'|partida|'+normal(o.n)+'|'+j)).slice(0,16)!==fi)throw 0;
+ G=nuevo();G.nombre=o.n;G.intento=o.i;G.vez=o.z;genera();G.ip=o.ip;G.f=o.f;G.a=o.a;G.ek=new Set(o.ek);G.t0=Date.now()-o.el;G.ins=o.ins||{};G.rec=o.rec||{};G.fase=o.fa;const p=paso();if(p&&p.t==='aviso')resuelveAviso(p);pinta();toast('Partida recuperada.');return true}catch(e){G=nuevo();G.msg=['Eso no es una partida válida de este juego.','mal'];pinta();return false}}
+
+/* ---------- profesorado: clave, guía, certificados, revisión y centro ---------- */
+const PFH='8f63732a48bea89838cc14135f3007c26eabe930788c8a8ac85c3e339ec542cd',PFURL='https://ghersan935-creator.github.io/Escuadradora/madera.html';
+let PFOK=false,PFT='guia',PFMAL=false,PFC='';try{PFOK=localStorage.getItem('prof-'+JUEGO)===PFH}catch(e){}
+const pfEsc=esc;
+function pfGuia(){const li=a=>'<ol style="margin:6px 0 14px;padding-left:22px;line-height:1.5">'+a.map(x=>'<li>'+x+'</li>').join('')+'</ol>',h=t=>`<h3 style="margin:16px 0 4px;font:700 19px var(--f-disp);color:var(--am)">${t}</h3>`,cu=centro()?PFURL+'?c='+encodeURIComponent(centro()):PFURL;
+ const reglas=Object.values(USOS).map(u=>`<b>${esc(u.t)}:</b> ${u.m.join(', ')} · cara: ${u.r.join(', ')}.`);
+ return `<div style="border:2px solid #c8891e;background:#fff6e0;color:#3a2a10;border-radius:8px;padding:10px 14px;margin:0 0 6px;line-height:1.5"><b style="font-size:17px">Enlaces: cuál dar al alumnado y cuál es el suyo</b><br><b>Para el alumnado:</b> <span style="font-family:monospace;word-break:break-all">${pfEsc(cu)}</span><br><b>Para usted:</b> ese mismo enlace terminado en <span style="font-family:monospace">#profesor</span>, más la clave.<br>Es el mismo juego; solo cambia el final de la dirección. No comparta con el alumnado ni <span style="font-family:monospace">#profesor</span> ni la clave. Si quiere que el certificado lleve el nombre de su centro, cree su enlace en la pestaña «Mi centro».</div>
+${h('Qué es y para quién')}<p class="ins">Un juego de una sola página para el alumnado de carpintería y mueble sobre las <b>propiedades y características de la madera y de sus derivados</b>. Recorre el tema como un trabajo de almacén, del tronco al material de un encargo. Evalúa y enseña a la vez: cada fallo explica qué ha pasado y dónde repasarlo en la presentación del tema. No necesita instalación, registro ni conexión a ningún servicio.</p>
+${h('Qué aprende el alumno')}${li(['Reconocer las partes del tronco (corteza, líber, cámbium, albura, duramen y médula), contar los anillos y leer el clima en ellos.','Distinguir las secciones transversal, radial y tangencial y las formas de despiezar el tronco.','Nombrar la cara, el canto y la testa, y escribir las medidas como largo × ancho × grueso.','Calcular el contenido de humedad y la merma, elegir el secado y prever el abarquillado.','Reconocer defectos (nudos, deformaciones, fendas, resina, médula) y decidir qué hacer con cada tabla.','Encolar un alistonado con los anillos alternados.','Leer e interpretar fichas técnicas AEIM: densidad, dureza, estabilidad, durabilidad y mecanización.','Calcular el volumen en m³ y el peso de una pieza.','Identificar los tableros derivados por su canto, su cara y su color, y sus revestimientos.','Elegir el material, el revestimiento y el canto de cada pieza según su uso.'])}
+${h('Fases')}<table><tr><td><b>Calentamiento</b></td><td>Verdadero o falso sobre la madera como material del futuro. Sin nota.</td></tr><tr><td><b>1 · El tronco (15 %)</b></td><td>Partes, edad, clima, madera de primavera, secciones, despiece, nombres y medidas de la pieza.</td></tr><tr><td><b>2 · Humedad y secado (15 %)</b></td><td>Contenido de humedad, lectura del xilohigrómetro, agua libre y de impregnación, secado, merma y abarquillado.</td></tr><tr><td><b>3 · Tablas (15 %)</b></td><td>De 5 a 6 tablas con defectos (nombre y qué hacer con ella) y encolado de un alistonado.</td></tr><tr><td><b>4 · Fichas técnicas (15 %)</b></td><td>¿Quién es quién?, ordenar especies, peso de una pieza y lectura de una ficha.</td></tr><tr><td><b>5 · Tableros (15 %)</b></td><td>Seis muestras de tablero y dos revestimientos, con una pregunta sobre cada uno, y los formatos comerciales.</td></tr><tr><td><b>6 · El encargo (25 %)</b></td><td>Material, revestimiento y canto de cada pieza de un mueble; PRL o mecanización y por qué existen los tableros.</td></tr></table>
+${h('Cómo se puntúa')}<p class="ins">Cada fase parte de 10. Cada error resta 0,25 y cada ayuda gráfica, 0,5. Repetir el mismo error sin cambiar nada no vuelve a restar. No se avanza con una respuesta mal. La nota final pondera las fases con los pesos indicados. El certificado dice <b>«Apto»</b> solo con un 5 o más de nota final <b>y</b> un 5 o más en el encargo.</p>
+${h('Ayudas que ofrece el juego')}${li(['<b>Ejemplo resuelto</b> al empezar cada fase, sobre un caso que no es el del alumno. No resta.','<b>Instrucciones grandes</b> la primera vez que se entra en cada fase, con su recordatorio en el mismo sitio.','<b>Pista al fallar</b>, con la diapositiva de la presentación «La madera» donde está la explicación. Resta solo el error (0,25).','<b>Ayuda gráfica</b> en algunos pasos: señala en el dibujo dónde va cada parte del tronco o de la pieza, numera los anillos, muestra la tabla comparativa de especies o la guía para elegir el material. Resta 0,5.','<b>Dibujos con zoom</b>, generados para cada alumno: tronco con detalle ampliado de la corteza, tablas por cara, canto y testa, y muestras de tablero en perspectiva.'])}
+${h('Por qué no sirve copiar')}<p class="ins">Cada alumno recibe su propio caso, que además cambia en cada intento: el tronco (número y anchura de los anillos, tramo de lluvia o sequía, albura, médula descentrada, posición del detalle), los pesos de la pieza, la lectura del xilohigrómetro, la tabla de la merma y su medida, la posición de la tabla en el tronco, las tablas con defectos y su destino (vista u oculta), los listones del alistonado, las especies de las fichas, el criterio de ordenación, la pieza que hay que pesar, las muestras de tablero con su grueso y su número de chapas, los revestimientos y el encargo. Las preguntas salen de bancos amplios y las opciones se barajan. Los encargos se alternan entre intentos: uno de tableros, interior y lacado, y el siguiente de madera maciza, exterior o con la veta vista. Solo con las tablas y las muestras de tablero salen más de mil millones de combinaciones.</p>
+${h('Cómo usarlo en clase')}<p class="ins">Una partida dura aproximadamente entre 45 y 90 minutos. La partida se guarda sola en el ordenador y se puede llevar a otro con «Guardar en un archivo». El alumno puede repetir cuantas veces quiera: el objetivo es que aprenda, y cuantas más veces repita, mejor asimila el tema. Al terminar entrega el certificado PDF y usted lo comprueba en la pestaña «Comprobar certificados».</p>
+${h('Criterios del encargo')}<p class="ins">Materiales y revestimientos que se aceptan para cada uso (si una pieza admite varias soluciones, vale cualquiera). Melamina, con canto de PVC o ABS; chapa natural y alistonado rechapado, con canto de chapa o contracanto macizo; laminado de alta presión, con cualquiera de los dos; lacado, sin canto o con chapa o contracanto; madera maciza, OSB y tablex, sin canto. El lacado solo se aplica sobre DM y la melamina sobre aglomerado o DM.</p>${li(reglas)}
+${h('Limitaciones')}<p class="ins">No hay servidor: las partidas y el número de intento se guardan en el navegador de cada alumno. El código del certificado detecta cambios en el nombre o en la nota, pero el archivo del juego es público; si la nota cuenta para la evaluación, el certificado no debería ser la única prueba.</p>
+${h('Autoría y uso')}<p class="ins">${AUTORIA} Esta página y su clave son solo para el profesorado: no las comparta con el alumnado.</p>`}
+function pfCentro(){const u=PFC?PFURL+'?c='+encodeURIComponent(PFC):'';return `<p class="ins">Escriba el nombre de su centro. Obtendrá un enlace para su alumnado: con él, el <b>certificado</b> muestra su centro en lugar del IES Virgen de la Esperanza. La autoría del juego no cambia.</p><label class="et">Nombre del centro</label><div class="fila"><input id="pfc" class="txt" maxlength="60" value="${pfEsc(PFC)}" placeholder="Por ejemplo: IES Sierra Luna" style="flex:1;margin:0"><button class="pri" data-a="pfcen">Crear enlace</button></div>${u?`<p class="ins" style="margin-top:12px">Enlace para su alumnado:</p><p style="word-break:break-all;padding:8px 10px;border:1px solid var(--am);font-family:monospace">${pfEsc(u)}</p><div class="fila"><button class="sec" data-a="pfcop">Copiar enlace</button><a class="sec" href="${pfEsc(u)}" target="_blank" rel="noopener" style="padding:6px 10px">Abrir</a></div>`:''}`}
+function pProfCert(){const r=G.prof.r;let t=`<p class="ins">Escriba el nombre tal como aparece en el certificado y su código de comprobación.</p><label class="et" for="pn">Nombre y apellidos</label><input class="txt" id="pn" value="${pfEsc(G.prof.n)}"><label class="et" for="pc">Código</label><input class="txt" id="pc" value="${pfEsc(G.prof.c)}" style="max-width:640px"><div class="fila"><button class="pri" data-a="compC">Comprobar</button></div>`;
+ if(r&&r.ok){const g={nombre:G.prof.n.trim(),intento:r.int,vez:r.vez},P={};for(const f of ORDEN)P[f]=GEN[f](rngDe(g.nombre,g.intento,f),g.vez);const nb=k=>coma(Math.max(0,10-r.fa[KF.indexOf(k)]*.25-r.ay[KF.indexOf(k)]*.5));
+  t+=`<div class="res2" style="color:var(--ve)">Certificado válido</div><table><tr><td>Fecha</td><td class="n">${r.f}</td></tr><tr><td>Nota</td><td class="n">${r.nota}</td></tr>${KF.map((k,i)=>`<tr><td>${NOMF[k]} (${PESO[k]} %) · ${r.fa[i]} errores y ${r.ay[i]} ayudas gráficas</td><td class="n">${nb(k)}</td></tr>`).join('')}<tr><td>Intento</td><td class="n">${r.vez}</td></tr><tr><td>Tiempo</td><td class="n">${r.min}</td></tr></table>
+  <div class="banda">Caso de este alumno</div><table><tr><td>Tronco</td><td>${P.tronco.dat.edad} años · tramo de ${P.tronco.dat.tramo==='lluvia'?'lluvia':'sequía'} · secciones ${P.tronco.dat.sec.join(', ')} · despiece ${P.tronco.dat.dsp} · pieza ${P.tronco.dat.pieza}</td></tr><tr><td>Humedad</td><td>${coma(P.humedad[0].dat.ch,1)} % · xilohigrómetro ${coma(P.humedad[0].dat.xv,1)} % · merma ${P.humedad[0].dat.merma} · tabla ${P.humedad[0].dat.tabla}</td></tr><tr><td>Tablas</td><td>${P.tablas.dat.defectos.join(', ')} · ${P.tablas.dat.listones} listones</td></tr><tr><td>Fichas</td><td>${P.fichas.dat.quien.join(' y ')} · ${P.fichas.dat.orden} · ${P.fichas.dat.peso} · ficha de ${P.fichas.dat.ficha}</td></tr><tr><td>Tableros</td><td>${P.tableros.dat.muestras.join(', ')}</td></tr><tr><td>Encargo</td><td><b>${P.encargo.dat.encargo}</b><br>${P.encargo.dat.E.pz.map(([n,u])=>`${esc(n)}: ${USOS[u].m.join(' / ')}`).join('<br>')}</td></tr></table>`}
+ else if(r)t+=`<div class="res2" style="color:var(--ro)">El nombre y el código no coinciden.</div>`;return t}
+function pProf(){if(!PFOK)return `<h2>Acceso del profesorado</h2><p class="ins">Escriba la clave que le ha facilitado el autor.</p><label class="et">Clave</label><div class="fila"><input id="pfk" class="txt" type="password" autocomplete="off" style="flex:1;margin:0"><button class="pri" data-a="pfent">Entrar</button></div>${PFMAL?'<div class="msg mal" style="margin-top:8px">La clave no es correcta.</div>':''}`;
+ const tb=(v,t)=>`<button class="sec" data-a="pftab" data-v="${v}" style="padding:5px 10px${PFT===v?';border-color:var(--am);color:var(--am)':''}">${t}</button>`;
+ return `<h2>Página del profesorado</h2><div class="fila" style="margin:0 0 12px">${tb('guia','Guía')}${tb('cert','Comprobar certificados')}${tb('cen','Mi centro')}<button class="sec" data-a="pfrev" style="padding:5px 10px">Revisar el juego</button><button class="sec" data-a="pfsal" style="padding:5px 10px;margin-left:auto">Cerrar sesión de profesor</button></div>${PFT==='cert'?pProfCert():PFT==='cen'?pfCentro():pfGuia()}`}
+async function pfEntra(){const k=$('#pfk');if(!k)return;const h=await sha('IESVE-prof|'+k.value.trim());if(h===PFH){PFOK=true;PFMAL=false;try{localStorage.setItem('prof-'+JUEGO,PFH)}catch(e){}}else PFMAL=true;pinta()}
+/* revisión del profesor: saltar entre fases y resolver pasos sin jugar */
+function revBarra(){const b=(f,t)=>`<button class="sec" data-a="revF" data-v="${f}" style="padding:4px 8px${G.fase===f?';border-color:var(--am);color:var(--am)':''}">${t}</button>`;return `<div class="fila" style="border:2px dashed var(--am);padding:6px;margin:0 0 10px"><b style="color:var(--am)">Revisión del profesor</b>${ORDEN.map(f=>b(f,FASES.find(x=>x[0]===f)[1])).join('')}${ORDEN.includes(G.fase)?'<button class="sec" data-a="revRes" style="padding:4px 8px">Resolver este paso</button>':''}<button class="sec" data-a="revFin" style="padding:4px 8px">Certificado</button><button class="sec" data-a="revSal" style="padding:4px 8px">Salir</button></div>`}
+function revEmpieza(){G=nuevo();G.nombre='Revisión del profesor';G.intento=1+Math.floor(Math.random()*999999);G.vez=1+Math.floor(Math.random()*2);G.t0=Date.now();genera();for(const f of ORDEN){G.ip[f]=0;G.f[f]=0;G.a[f]=0}G.fase='tronco';G.ins={}}
+function resolver(){const p=paso(),st=G.st;if(!p||st.hecho)return;if(p.t==='demo'||p.t==='finfase')return siguiente();
+ if(p.t==='elige')return compElige(p.sol);if(p.t==='num'){st.ok={};p.campos.forEach(c=>st.ok[c.id]=true);return hecho(p.exp)}if(p.t==='lag')return compLag(p.sol.join(' x '));
+ if(p.t==='multi'){st.v={};p.items.forEach((it,i)=>st.v[i]=it.sol);return compMulti()}if(p.t==='etiq'){st.pl={};const P2=p.labs;if(G.fase==='tronco'&&P2.length===6){PARTES.forEach(id=>st.pl[id]=centroZona(G.P.tronco.T,id))}else{for(let y=5;y<VH;y+=6)for(let x=5;x<VW;x+=6){const z=p.zona(x,y);if(z&&!st.pl[z])st.pl[z]=[x,y]}}return hecho('Resuelto por el profesor.')}
+ if(p.t==='orden'){st.o=[...p.items].sort((a,b)=>p.val(a)-p.val(b));return compOrden()}if(p.t==='listones'){st.e=st.e.map((v,i)=>i%2===0);return compListones()}
+ if(p.t==='encargo'){p.filas.forEach((f,i)=>{const U=USOS[f.u],m=U.m.find(m=>U.r.some(r=>revValido(m,r))),r=U.r.find(r=>revValido(m,r));st.v[i]={m,r,c:cantosOk(m,r)[0]}});return compEncargo()}}
+
+/* ---------- eventos ---------- */
+document.addEventListener('click',async e=>{const el=e.target.closest('[data-a],[data-chip]');if(!el||el.disabled)return;const a=el.dataset.a,v=el.dataset.v;
+ if(el.dataset.chip){if(arr&&arr.mov)return;G.st.sel=G.st.sel===el.dataset.chip?null:el.dataset.chip;G.st.ayV=false;G.msg=null;pinta();return}
+ if(a==='empezar'){const n=$('#nom').value;if(n.trim().split(/\s+/).length<2){G.msg=['Escribe tu nombre y al menos un apellido.','mal'];pinta();return}empieza(n)}
+ else if(a==='gcont'){const n=($('#nom').value||'').trim();let t=null;try{t=n?localStorage.getItem(claveP(n)):null}catch(_){}if(t)cargaPartida(t);else $('#fpar').click()}
+ else if(a==='gguarda')guardaArchivo();
+ else if(a==='sig')siguiente();
+ else if(a==='insX'){G.ins[G.fase]=true;autoGuarda();pinta()}
+ else if(a==='insO'){e.preventDefault();G.ins[G.fase]=false;pinta()}
+ else if(a==='op')compElige(+v);
+ else if(a==='mcomp')compMulti();
+ else if(a==='ocomp')compOrden();
+ else if(a==='oup'||a==='odn'){const o=G.st.o,i=+v,j=a==='oup'?i-1:i+1;[o[i],o[j]]=[o[j],o[i]];G.msg=null;pinta()}
+ else if(a==='lcomp')compListones();
+ else if(a==='ecomp')compEncargo();
+ else if(a==='ayuda')usarAyuda();
+ else if(a==='ayNo'){e.preventDefault();G.st.ayV=false;pinta()}
+ else if(a==='zoom')zoom(+v);
+ else if(a==='desc')descargar();
+ else if(a==='otra'){REV=false;G=nuevo();pinta()}
+ else if(a==='pfent')pfEntra();
+ else if(!PFOK){}
+ else if(a==='pftab'){PFT=v;pinta()}
+ else if(a==='compC'){const n=$('#pn').value,c=$('#pc').value;G.prof={n,c,r:await compCert(n,c)};pinta()}
+ else if(a==='pfsal'){PFOK=false;REV=false;try{localStorage.removeItem('prof-'+JUEGO)}catch(e){}G=nuevo();G.fase='prof';G.prof={n:'',c:'',r:null};pinta()}
+ else if(a==='pfrev'){REV=true;revEmpieza();pinta()}
+ else if(a==='pfcen'){PFC=($('#pfc').value||'').replace(/[<>&"'`]/g,'').replace(/\s+/g,' ').trim();pinta()}
+ else if(a==='pfcop'){try{navigator.clipboard.writeText(PFURL+'?c='+encodeURIComponent(PFC));el.textContent='Copiado'}catch(e){}}
+ else if(REV&&a==='revF'){G.fase=v;G.ip[v]=0;G.st={};G.msg=null;pinta()}
+ else if(REV&&a==='revRes')resolver();
+ else if(REV&&a==='revFin'){G.fase='fin';G.rec.enc=G.rec.enc||G.P.encargo[1].filas.map(f=>{const U=USOS[f.u],m=U.m.find(m=>U.r.some(r=>revValido(m,r))),r=U.r.find(r=>revValido(m,r));return {n:f.n,m,r,c:cantosOk(m,r)[0]}});emitir();pinta()}
+ else if(REV&&a==='revSal'){REV=false;G=nuevo();G.fase='prof';G.prof={n:'',c:'',r:null};pinta()}});
+document.addEventListener('keydown',e=>{const t=e.target;if(e.key!=='Enter')return;if(t.dataset&&t.dataset.nf){e.preventDefault();compNum(t.dataset.nf,t.value)}else if(t.dataset&&t.dataset.lag){e.preventDefault();compLag(t.value)}else if(t.id==='pfk')pfEntra();else if(t.id==='nom'){const b=$('[data-a="empezar"]');if(b)b.click()}else if(t.id==='pfc'){const b=$('[data-a="pfcen"]');if(b)b.click()}});
+document.addEventListener('change',e=>{const t=e.target;if(!t.isConnected)return;if(t.dataset.nf)compNum(t.dataset.nf,t.value);else if(t.dataset.lag)compLag(t.value);else if(t.dataset.mi!==undefined){G.st.v[t.dataset.mi]=t.value;G.st.mal&&(G.st.mal[t.dataset.mi]=false);t.className=''}else if(t.dataset.ef){const [i,k]=t.dataset.ef.split(':');G.st.v[i][k]=t.value;G.st.mal[i][k]=false;t.className=''}});
+$('#fpar').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(f)cargaPartida(await f.text())});
+/* arrastrar etiquetas, voltear listones, zoom y desplazamiento del dibujo */
+let arr=null;
+document.addEventListener('pointerdown',e=>{const c=e.target.closest('[data-chip]');if(c&&!c.disabled){arr={id:c.dataset.chip,x:e.clientX,y:e.clientY,mov:false,el:null}}});
+document.addEventListener('pointermove',e=>{if(!arr||!arr.id)return;if(!arr.mov&&Math.hypot(e.clientX-arr.x,e.clientY-arr.y)>6){arr.mov=true;arr.el=document.createElement('div');arr.el.className='fant';arr.el.textContent=paso().nom[arr.id];document.body.appendChild(arr.el)}if(arr.el){arr.el.style.left=e.clientX+12+'px';arr.el.style.top=e.clientY+8+'px'}});
+document.addEventListener('pointerup',e=>{if(!arr||!arr.id)return;const a=arr;if(a.el)a.el.remove();setTimeout(()=>{arr=null},0);if(!a.mov)return;const h=$('#hoja').getBoundingClientRect();if(e.clientX>=h.left&&e.clientX<=h.right&&e.clientY>=h.top&&e.clientY<=h.bottom){const q=aSvg(e.clientX,e.clientY);if(q)colocar(a.id,q[0],q[1])}});
+(()=>{const h=$('#hoja');let pan=null;h.addEventListener('wheel',e=>{if(!$('#hoja svg'))return;e.preventDefault();const r=h.getBoundingClientRect();zoom(e.deltaY<0?1:-1,(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height)},{passive:false});
+ h.addEventListener('pointerdown',e=>{if(!$('#hoja svg'))return;pan={x:e.clientX,y:e.clientY,mov:false,vb:G.vb?[...G.vb]:null}});
+ h.addEventListener('pointermove',e=>{if(!pan||!pan.vb)return;const d=Math.hypot(e.clientX-pan.x,e.clientY-pan.y);if(d>6)pan.mov=true;if(!pan.mov)return;const r=h.getBoundingClientRect(),v=pan.vb;G.vb=[Math.max(0,Math.min(VW-v[2],v[0]-(e.clientX-pan.x)*v[2]/r.width)),Math.max(0,Math.min(VH-v[3],v[1]-(e.clientY-pan.y)*v[3]/r.height)),v[2],v[3]];aplicaVb()});
+ h.addEventListener('pointerup',e=>{const p0=pan;pan=null;if(!p0||p0.mov)return;const p=paso();if(!p||G.st.hecho)return;
+  if(p.t==='etiq'&&G.st.sel){const q=aSvg(e.clientX,e.clientY);if(q)colocar(G.st.sel,q[0],q[1])}
+  else if(p.t==='listones'){const g=e.target.closest('[data-l]');if(g){const i=+g.dataset.l;G.st.e[i]=!G.st.e[i];G.st.res=null;G.msg=null;pintaVis()}}})})();
+G=nuevo();pinta();
+function vistaProfesor(){if(location.hash==='#profesor'&&(G.fase==='inicio'||G.fase==='prof')){G.fase='prof';G.prof={n:'',c:'',r:null};pinta()}}
+addEventListener('hashchange',vistaProfesor);vistaProfesor();
+
+</script>
+</body>
+</html>
