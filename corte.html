@@ -1020,11 +1020,11 @@ function mano(px,py){c.save();c.translate(px,py);c.fillStyle='#E8B99A';c.strokeS
 function empujador(px,py){c.save();c.translate(px,py);c.fillStyle='#E0A63C';c.strokeStyle='#5E4426';c.lineWidth=1.5;c.beginPath();c.moveTo(-9,-34);c.lineTo(9,-34);c.lineTo(9,-22);c.lineTo(3,-22);c.lineTo(7,54);c.lineTo(-7,54);c.lineTo(-3,-22);c.lineTo(-9,-22);c.closePath();c.fill();c.stroke();c.restore();mano(px+2,py+62)}
 function camara(){let xl=-1050,xr=820,h=1000,cy=-100;const en=S.f==='corte'&&S.pz;
   if(en){const p=S.pz;xl=Math.min(p.x-140,-700);xr=Math.max(p.x+p.w+120,S.guia+160,520);h=p.h;if(S.recorte)xr=Math.max(xr,S.recorte.x+S.recorte.w+120)}
-  if(!en||S.vista==='maquina'){const a=-2700,b=1560,sp=3750;esc=Math.min(W/(b-a),H/sp);ox=W/2-(a+b)/2*esc;oy=H/2+80*esc+18;return}
+  if(!en||S.vista==='maquina'){const a=-2700,b=1450,sp=3750;esc=Math.min(W/(b-a),H/sp);ox=W/2-(a+b)/2*esc;oy=H/2+80*esc+18;return}
   const spanY=Math.max(h,1100)+700;esc=Math.min(W/(xr-xl),H/spanY,.62);{const hw=H/(2*esc),pc=S.fy+S.feed+h/2,lim=Math.max(0,hw-300);cy=Math.min(Math.max(pc,-lim),lim)}ox=W/2-(xl+xr)/2*esc;oy=H/2+cy*esc}
 function dibuja(){c.clearRect(0,0,W,H);camara();BOT=[];
   const en=S.f==='corte'&&S.pz,on=S.rpm>.02,fy=en?S.fy:-900,mueve=en&&carroMueve(),feed=en?S.feed:0,mon=en&&S.sub==='montaje';
-  rc(4,-600,1200,1200,'#8FA19D','#62757A');for(let i=1;i<6;i++)rc(4,-600+i*200,1200,1.5/esc,'rgba(0,0,0,.08)');
+  rc(4,-750,1300,1500,'#8FA19D','#62757A');for(let i=1;i<8;i++)rc(4,-750+i*200,1300,1.5/esc,'rgba(0,0,0,.08)');
   const ry=!en?1560:(mueve?fy+S.pz.h+feed:2400),cb=ry+40-3000;S.ry=ry;
   rc(-1500,ry-900,1080,16,'#5B6E6C');rc(-1500,ry-900,16,900,'#5B6E6C');rc(-1000,ry-900,12,900,'#5B6E6C');rc(-320,cb-40,200,40,'#1C2B28');
   rc(-420,cb,416,3000,'#AEBBB7','#62757A');for(let i=1;i<5;i++)rc(-420+i*83,cb,3,3000,'rgba(0,0,0,.18)');txt('CARRO 3000',-212,cb+70,'#2E403E');
@@ -1048,7 +1048,7 @@ function dibuja(){c.clearRect(0,0,W,H);camara();BOT=[];
   else if(S.f==='corte'){c.fillStyle='rgba(28,43,40,.85)';c.font='600 16px Barlow,Arial';c.textAlign='center';c.fillText('Arrastra aquí un trozo desde la mesa de apoyo',W/2,H/2)}
   giro+=S.rpm*.9;rc(-3,-150,6+(S.incl?S.incl/3:0),300,'#2B3433');if(S.incl){c.fillStyle='#F2C230';c.font='700 15px "IBM Plex Mono",monospace';c.textAlign='left';c.fillText('disco a '+S.incl+'°',X(40),Y(-160)+18)}c.strokeStyle='#E8EEEC';c.lineWidth=2;c.setLineDash([6,8]);c.lineDashOffset=-giro*30;c.beginPath();c.moveTo(X(0),Y(-150));c.lineTo(X(0),Y(150));c.stroke();c.setLineDash([]);c.lineDashOffset=0;rc(-2,156,4,70,'#F2C230');
   if(en&&S.prot)rc(-55,-170,110,400,'rgba(242,194,48,.26)','#F2C230');else{c.setLineDash([5,5]);rc(-55,-170,110,400,null,'#F2C230');c.setLineDash([])}
-  rc(55,20,1300,22,'rgba(70,90,88,.9)');rc(1355,-70,130,130,'#C9B98A','#3A4F4C');
+  rc(55,20,1249,22,'rgba(70,90,88,.9)');
   if(arr&&arr.dec==='feed'){S.herr==='emp'?empujador(arr.px,arr.py):mano(arr.px,arr.py)}
   const opx=X(-560);c.beginPath();c.ellipse(opx,H-22,20,11,0,0,7);c.fillStyle='#8DB6FF';c.fill();c.beginPath();c.arc(opx,H-22,7,0,7);c.fillStyle='#E8B99A';c.fill()}
 /* ---------- interacción en la máquina ---------- */
