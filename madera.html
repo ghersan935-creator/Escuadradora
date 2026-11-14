@@ -498,6 +498,12 @@ function nudoTex(x,cx,cy,rx,ry,tipo,r){x.save();if(tipo==='nsano'){for(let k=5;k
  else if(tipo==='nmuerto'){x.fillStyle='#1E130A';x.beginPath();x.ellipse(cx,cy,rx+6,ry+6,0,0,7);x.fill();x.fillStyle='#6E4420';x.beginPath();x.ellipse(cx,cy,rx,ry,0,0,7);x.fill();x.strokeStyle='#1E130A';x.lineWidth=2;x.beginPath();x.moveTo(cx-rx*.6,cy-ry*.3);x.lineTo(cx+rx*.5,cy+ry*.4);x.stroke()}
  else{x.globalAlpha=.55;x.fillStyle='#7A5A3A';x.beginPath();x.ellipse(cx,cy,rx+22,ry+14,0,0,7);x.fill();x.globalAlpha=1;x.fillStyle='#2A1A0D';x.beginPath();x.ellipse(cx,cy,rx+3,ry+2,0,0,7);x.fill();for(let i=0;i<40;i++){x.fillStyle=i%3?'#0E0804':'#4A3220';x.beginPath();x.arc(cx+rf(r,-rx,rx),cy+rf(r,-ry,ry),rf(r,1.5,4),0,7);x.fill()}}x.restore()}
 
+/* Texturas de las seis caras de una pieza (largo L en x, grueso G en y, ancho A en z) sacada de un tronco:
+   el eje del tronco va a lo largo de la pieza; dz es la distancia de la médula al centro de la pieza
+   y xoff desplaza la médula a lo ancho. Devuelve los lienzos en el orden de BoxGeometry: +x, −x, +y, −y, +z, −z. */
+const rgbDe=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+function lienzosPieza(L,G,A,o,res){const P={cl:rgbDe(o.cl),os:rgbDe(o.os),p:o.p,tp:o.tp,wb:o.wb||.02,ph:o.ph||0,on:o.on||.02,Rw:99,Rd:0},K=(lx,ly,lz)=>[lz+o.xoff,lx,o.dz+ly],l=L/2,g=G/2,a=A/2,[wl,wa,wg]=res||[2048,420,110];
+ return [texSeccion(P,K(l,-g,a),K(l,-g,-a),K(l,g,a),wa,wg),texSeccion(P,K(-l,-g,-a),K(-l,-g,a),K(-l,g,-a),wa,wg),texSeccion(P,K(-l,g,a),K(l,g,a),K(-l,g,-a),wl,wa),texSeccion(P,K(-l,-g,-a),K(l,-g,-a),K(-l,-g,a),wl,wa),texSeccion(P,K(-l,-g,a),K(l,-g,a),K(-l,g,a),wl,wg),texSeccion(P,K(l,-g,-a),K(-l,-g,-a),K(l,g,-a),wl,wg)]}
 /* ---------- vista 3D genérica: cámara orbital, etiquetas, clic ---------- */
 function t3Montar(cont,cfg){const R=t3R(),S=new THREE.Scene(),C=new THREE.PerspectiveCamera(32,1,.05,400);
  S.add(new THREE.HemisphereLight(0xFFF4E2,0x6E6458,.5));const L=new THREE.DirectionalLight(0xFFFFFF,1.0);L.position.set(6,12,8);L.castShadow=true;L.shadow.mapSize.set(2048,2048);const sc=cfg.sombra||8;Object.assign(L.shadow.camera,{left:-sc,right:sc,top:sc,bottom:-sc,near:.5,far:60});L.shadow.bias=-.0006;S.add(L);const L2=new THREE.DirectionalLight(0xFFF2E0,.25);L2.position.set(-8,4,-6);S.add(L2);
@@ -525,8 +531,8 @@ function tablaGeo(def,k){const g=new THREE.BoxGeometry(TL,TT,TW,60,2,16),p=g.att
   if(def==='abarq')y+=k*.16*v*v;else if(def==='cara')y+=k*.28*u*u;else if(def==='canto')z+=k*.3*(1-u*u);else if(def==='alabeo'){const a=k*.22*u;const y2=y*Math.cos(a)-z*Math.sin(a),z2=y*Math.sin(a)+z*Math.cos(a);y=y2+Math.abs(Math.sin(a))*TW*.45;z=z2}
   p.setXYZ(i,x,y,z)}g.computeVertexNormals();return g}
 function tablaMats(def,r,dat){const cl=dat.cl,os=dat.os,tipo=def==='medula'?'radial':dat.tipo;
- const top=vetaLargo(cnv(2048,420),r,cl,os,tipo),bot=vetaLargo(cnv(2048,420),r,cl,os,tipo),can=vetaLargo(cnv(2048,110),r,cl,os,'radial'),can2=vetaLargo(cnv(2048,110),r,cl,os,'radial');
- const tW=420,tH=110;const pc=def==='medula'?[tW*dat.fz,tH*.5]:tipo==='radial'?[-tW*1.6,tH*.5]:[tW*.5,tH+tW*rf(r,.25,.45)];const te1=anillosTesta(cnv(tW,tH),r,cl,os,pc[0],pc[1],9),te2=anillosTesta(cnv(tW,tH),r,cl,os,tW-pc[0],pc[1],9);
+ const tW=420,tH=110,pc=[tW*dat.fz,tH*.5],o={cl,os,p:rf(r,.06,.085),tp:rf(r,.045,.075),wb:rf(r,.01,.03),ph:rf(r,0,6.28),on:rf(r,.015,.035),dz:def==='medula'?0:tipo==='radial'?0:rf(r,.42,.8),xoff:def==='medula'?-(dat.fz-.5)*TW:tipo==='radial'?TW/2+rf(r,.25,.5):rf(r,-.2,.2)};
+ const [te1,te2,top,bot,can,can2]=lienzosPieza(TL,TT,TW,o);
  const xt=top.getContext('2d'),xb=bot.getContext('2d');
  if(def==='nsano'||def==='nmuerto'||def==='npod'){nudoTex(xt,dat.fx*2048,dat.fz*420,dat.rk*2048/TL,dat.rk*.7*420/TW,def,r);nudoTex(xb,(1-dat.fx)*2048+0,dat.fz*420,dat.rk*1.15*2048/TL,dat.rk*.8*420/TW,def,r)}
  if(def==='resina'){const x=xt,cx=dat.fx*2048,cy=dat.fz*420;const g=x.createLinearGradient(0,cy-14,0,cy+14);g.addColorStop(0,'#8A4A0A');g.addColorStop(.5,'#F0B040');g.addColorStop(1,'#8A4A0A');x.fillStyle=g;x.beginPath();x.ellipse(cx,cy,rf(r,110,170),rf(r,12,17),0,0,7);x.fill();x.fillStyle='rgba(255,240,190,.75)';x.beginPath();x.ellipse(cx-20,cy-4,45,3.5,0,0,7);x.fill()}
@@ -536,7 +542,7 @@ function tablaMats(def,r,dat){const cl=dat.cl,os=dat.os,tipo=def==='medula'?'rad
  return [matT(te1),matT(te2),matT(top),matT(bot),matT(can),matT(can2)]}
 function tablaDat(def,r){const sp=pick(r,[['#D9AE74','#8A5528'],['#CFA066','#7E4A22'],['#E0BA82','#94602E'],['#C89560','#6E421E']]);return {cl:sp[0],os:sp[1],tipo:r()<.65?'tangencial':'radial',fx:rf(r,.25,.75),fz:rf(r,.3,.7),rk:rf(r,.2,.3),izq:r()<.5,k:rf(r,.8,1.15)*(r()<.5?1:-1)}}
 function vistaTabla(def,seed,ayuda){const r=RNG(seed),dat=tablaDat(def,r);const mejor={abarq:'Testa',canto:'Cara',cara:'Canto',alabeo:'Testa',fenda:'Cara',resina:'Cara',medula:'Testa',nsano:'Cara',nmuerto:'Cara',npod:'Cara'}[def];
- return {key:'tabla|'+def+'|'+seed,def,cam:{th:-.55,el:.42,d:9.5},presets:PRE_TABLA,ayuda,mejor,sombra:7,
+ return {key:'tabla|'+def+'|'+seed,def,cam:{th:-.55,el:.42,d:11.5},presets:PRE_TABLA,ayuda,mejor,sombra:7,
   construir(S,V){const banco=new THREE.Mesh(new THREE.BoxGeometry(9,.25,3.6),matC('#B9B4A6'));banco.position.y=-TT/2-.125-.01;banco.receiveShadow=true;S.add(banco);
    const k=Math.abs(dat.k),g=tablaGeo(def,def==='abarq'||def==='cara'?k:dat.k),m=new THREE.Mesh(g,tablaMats(def,RNG(seed+1),dat));m.castShadow=true;m.receiveShadow=true;S.add(m);
    if(def==='cara')m.position.y=0;if(def==='abarq')m.position.y=0;
@@ -550,23 +556,28 @@ function vistaTabla(def,seed,ayuda){const r=RNG(seed),dat=tablaDat(def,r);const 
    return {marca}},
   actualizar(c,d){c.marca.visible=!!d.ayuda},
   etiquetas(c,V){return V.cfg.ayuda?[{p:c.marca.position.clone().add(new THREE.Vector3(0,.95,0)),h:'Mira aquí',css:'background:#D0342C;color:#fff;font:700 15px Barlow,Arial;padding:3px 9px;border-radius:4px'}]:[]}}}
-const PRE_TABLA={Perspectiva:{th:-.55,el:.42,d:9.5},Cara:{th:0,el:1.45,d:10},Canto:{th:0,el:.02,d:10},Testa:{th:Math.PI/2,el:.05,d:5.5}};
+const PRE_TABLA={Perspectiva:{th:-.55,el:.42,d:11.5},Cara:{th:0,el:1.45,d:10},Canto:{th:0,el:.02,d:10},Testa:{th:Math.PI/2,el:.05,d:5.5}};
 
 /* ---------- 2 · alistonado: listones que se voltean con un clic ---------- */
 function vistaListones(est,res,key){return {key,est,res,cam:{th:.95,el:.38,d:15},presets:{Perspectiva:{th:.95,el:.38,d:15},Testa:{th:Math.PI/2,el:.02,d:9}},sombra:7,
  construir(S,V){const n=est.length,w=.75,ls=[];const r=RNG(77),tW=300,tH=180;const banco=new THREE.Mesh(new THREE.BoxGeometry(7,.2,n*w+1.4),matC('#B9B4A6'));banco.position.y=-.45;banco.receiveShadow=true;S.add(banco);
-  for(let i=0;i<n;i++){const sp=[['#E2C08A','#9C6A3C'],['#D9B07A','#8E5E30'],['#E8CFA0','#A8783F']][i%3];const te=anillosTesta(cnv(tW,tH),r,sp[0],sp[1],tW/2,tH+tW*.55,10);const top=vetaLargo(cnv(1024,200),r,sp[0],sp[1],'tangencial'),cn=vetaLargo(cnv(1024,120),r,sp[0],sp[1],'radial');
-   const g=new THREE.BoxGeometry(5,.5,w-.02,30,2,10),m=new THREE.Mesh(g,[matT(te),matT(te),matT(top),matT(top),matT(cn),matT(cn)]);m.userData.i=i;m.castShadow=true;m.receiveShadow=true;
+  for(let i=0;i<n;i++){const sp=[['#E2C08A','#9C6A3C'],['#D9B07A','#8E5E30'],['#E8CFA0','#A8783F']][i%3],LZ=lienzosPieza(5,.5,w,{cl:sp[0],os:sp[1],p:rf(r,.05,.065),tp:rf(r,.03,.05),ph:rf(r,0,6.28),dz:rf(r,-.75,-.55),xoff:rf(r,-.08,.08)},[1024,160,110]);
+   const g=new THREE.BoxGeometry(5,.5,w-.004,30,2,12),m=new THREE.Mesh(g,LZ.map(q=>matT(q)));m.userData.i=i;m.castShadow=true;m.receiveShadow=true;
    const arco=new THREE.Group(),piv=new THREE.Group();arco.position.z=(i-(n-1)/2)*w;arco.add(piv);piv.add(m);S.add(arco);piv.rotation.x=est[i]?Math.PI:0;ls.push({arco,piv,m,g,rot:est[i]?Math.PI:0})}
   return {ls,w,n}},
  actualizar(c,d,V){const est=d.est||V.cfg.est,res=d.res;
   c.ls.forEach((l,i)=>{const obj=est[i]?Math.PI:0;if(Math.abs(l.rot-obj)>.01){const a=l.rot,t0=performance.now();l.rot=obj;V.anim.push(t=>{const k=Math.min(1,(t-t0)/450),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;l.piv.rotation.x=a+(obj-a)*e;l.piv.position.y=Math.sin(k*Math.PI)*.6;return k<1})}
-   /* al secarse, cada listón se abarquilla hacia el lado contrario a su médula */
-   const p=l.g.attributes.position,base=l.base||(l.base=Float32Array.from(p.array));for(let j=0;j<p.count;j++){const v=base[j*3+2]/(c.w/2);p.setY(j,base[j*3+1]+(res?.09*v*v:0))}p.needsUpdate=true;l.g.computeVertexNormals();
-   /* si todos tiran hacia el mismo lado, el tablero entero se abarquilla */
-   const z=l.arco.position.z,cur=res==='mal'?(est[0]?-.06:.06):0;l.arco.position.y=cur*z*z;l.arco.rotation.x=-Math.atan(2*cur*z)});V.sucio=true},
+   });
+  /* Al secarse, cada listón se curva hacia el lado contrario a su médula, pero los cantos siguen
+     encolados: el perfil del tablero es continuo. Alternados, las curvas se compensan y solo queda
+     una ligera ondulación; si varios seguidos tiran hacia el mismo lado, las curvas se suman. */
+  const n=c.n,w=c.w,K=res==='ok'?.3:res==='mal'?.17:0,ys=[0],ms=[0];for(let k=0;k<n;k++){const sk=(est[k]?-1:1)*K;ms.push(ms[k]+sk*w);ys.push(ys[k]+ms[k]*w+sk*w*w/2)}
+  const z0=-n*w/2,pend=(ys[n]-ys[0])/(n*w),bruto=z=>{const k=Math.max(0,Math.min(n-1,Math.floor((z-z0)/w))),d=z-(z0+k*w),sk=(est[k]?-1:1)*K;return ys[k]+ms[k]*d+sk*d*d/2-pend*(z-z0)};
+  let mn=1e9,mx=-1e9;for(let q=0;q<=n*8;q++){const y=bruto(z0+q*w/8);mn=Math.min(mn,y);mx=Math.max(mx,y)}const esc2=mx-mn>.8?.8/(mx-mn):1,prof=z=>(bruto(z)-mn)*esc2;c.prof=prof;
+  c.ls.forEach((l,i)=>{const zc=(i-(n-1)/2)*w,f=est[i]?-1:1,p=l.g.attributes.position,base=l.base||(l.base=Float32Array.from(p.array));l.arco.position.set(0,0,zc);l.arco.rotation.x=0;
+   for(let q=0;q<p.count;q++){const zl=base[q*3+2];p.setY(q,base[q*3+1]+f*(res?prof(zc+f*zl):0))}p.needsUpdate=true;l.g.computeVertexNormals()});V.sucio=true},
  clic(c,o,V){if(!o||o.userData.i===undefined||G.st.hecho)return;const i=o.userData.i;G.st.e[i]=!G.st.e[i];G.st.res=null;G.msg=null;V.update({est:G.st.e,res:null});$('#der').innerHTML=(REV?revBarra():'')+barraG(G.fase)+pPaso()},
- etiquetas(c){return c.ls.map((l,i)=>({p:new THREE.Vector3(-2.9,.55+l.arco.position.y,l.arco.position.z),h:String(i+1),css:'background:#1C2B28;color:#fff;font:600 14px IBM Plex Mono,monospace;width:24px;height:24px;border-radius:12px;display:grid;place-items:center'}))}}}
+ etiquetas(c){return c.ls.map((l,i)=>({p:new THREE.Vector3(-2.9,.55+(c.prof?c.prof(l.arco.position.z):0),l.arco.position.z),h:String(i+1),css:'background:#1C2B28;color:#fff;font:600 14px IBM Plex Mono,monospace;width:24px;height:24px;border-radius:12px;display:grid;place-items:center'}))}}}
 
 /* ---------- 3 · muestras de tablero ---------- */
 function particulasC(x,w,h,r,cols,tam,n,y0=0){for(let i=0;i<n;i++){x.fillStyle=pick(r,cols);x.save();x.translate(r()*w,y0+r()*h);x.rotate(rf(r,0,6.28));const s=rf(r,tam*.5,tam*1.2);x.fillRect(-s,-s*.35,s*2,s*.7);x.restore()}}
@@ -682,7 +693,7 @@ function vistaPieza(Pz,seed){const r=RNG(seed),l=5.4,w=Math.max(.7,Math.min(2.4,
  return {key:'pieza|'+seed,cam,presets:{Perspectiva:cam,Arriba:{th:0,el:1.45,d:9.5},Testa:{th:Math.PI/2,el:.1,d:6}},sombra:6,
   construir(S,V){const banco=new THREE.Mesh(new THREE.BoxGeometry(9,.2,5),matC('#B9B4A6'));banco.position.y=-t/2-.105;banco.receiveShadow=true;S.add(banco);
    const tipo=r()<.6?'tangencial':'radial',tW=420,tH=Math.round(420*t/w),pc=tipo==='radial'?[-tW*1.6,tH*.5]:[tW*.5,tH+tW*rf(r,.25,.45)],te=()=>anillosTesta(cnv(tW,Math.max(40,tH)),r,sp[0],sp[1],pc[0],pc[1],9);
-   const m=new THREE.Mesh(new THREE.BoxGeometry(l,t,w),[matT(te()),matT(te()),matT(vetaLargo(cnv(2048,420),r,sp[0],sp[1],tipo)),matT(vetaLargo(cnv(2048,420),r,sp[0],sp[1],tipo)),matT(vetaLargo(cnv(2048,110),r,sp[0],sp[1],'radial')),matT(vetaLargo(cnv(2048,110),r,sp[0],sp[1],'radial'))]);m.castShadow=true;m.receiveShadow=true;S.add(m);
+   const m=new THREE.Mesh(new THREE.BoxGeometry(l,t,w),lienzosPieza(l,t,w,{cl:sp[0],os:sp[1],p:rf(r,.06,.085),tp:rf(r,.045,.07),ph:rf(r,0,6.28),dz:tipo==='radial'?0:rf(r,.5,.85),xoff:tipo==='radial'?w/2+.3:rf(r,-.15,.15)},[1536,400,128]).map(q=>matT(q)));m.castShadow=true;m.receiveShadow=true;S.add(m);
    /* líneas de cota con sus extremos */
    const ml=new THREE.LineBasicMaterial({color:0x1C2B28}),seg=(a,b)=>{const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a),new THREE.Vector3(...b)]);S.add(new THREE.Line(g,ml))},y0=-t/2+.01,o=.38,e=.12;
    seg([-l/2,y0,w/2+o],[l/2,y0,w/2+o]);seg([-l/2,y0,w/2+o-e],[-l/2,y0,w/2+o+e]);seg([l/2,y0,w/2+o-e],[l/2,y0,w/2+o+e]);seg([-l/2,y0,w/2],[-l/2,y0,w/2+o]);seg([l/2,y0,w/2],[l/2,y0,w/2+o]);
