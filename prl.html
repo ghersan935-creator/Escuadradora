@@ -861,15 +861,15 @@ function modHer(g,k){const y=.92;
 function vistaHer(k,key){return {key:'her|'+key,sombra:2,cam:{th:-.7,el:.5,d:2.2,t:V3(0,.95,0)},dmin:1,dmax:5,construir(S){suelo(S,5,5);const g=grupo(S);banco(g,0,0,0,{});tabla(g,.6,.03,.3,-.4,.905,.1);for(const x of[-.65,-.15]){const s=grupo(g,x,.9,.1);caja(s,.04,.14,.04,C3.rojo,0,.06,0)}modHer(grupo(g,.25,0,-.05),k);return {}}}}
 /* ---------- la cabina de barnizado ---------- */
 function vistaCabina(key){return {key:'cab|'+key,sombra:6,cam:{th:Math.PI,el:.5,d:11,t:V3(0,1.0,.4)},dmin:3,dmax:16,presets:{'General':{th:Math.PI,el:.5,d:11},'Desde la izquierda':{th:Math.PI+.6,el:.4,d:10},'Desde la derecha':{th:Math.PI-.6,el:.4,d:10}},construir(S){suelo(S,9,6);const P=(w,h,x,z,ry)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),matC('#E9E6DC',{side:THREE.FrontSide}));m.position.set(x,h/2,z);m.rotation.y=ry;m.receiveShadow=true;S.add(m)};P(9,3,0,3,Math.PI);P(6,3,-4.5,0,Math.PI/2);P(6,3,4.5,0,-Math.PI/2);P(9,3,0,-3,0);
- /* zona de pintura: pared filtrante con la extracción */
- caja(S,3.2,2.3,.25,'#9AA3A6',-2.4,1.15,2.85);caja(S,3.0,1.7,.04,'#D8D2B8',-2.4,1.2,2.71);for(let i=0;i<7;i++)caja(S,.03,1.7,.05,'#B9B39A',-3.8+i*.47,1.2,2.7);cil(S,.3,.8,'#8F979B',-2.4,2.65,2.75);
- for(const x of[-2.9,-1.9])for(const z of[1.3,1.9])caja(S,.05,.8,.05,C3.grisO,x,.4,z);caja(S,1.2,.04,.75,C3.grisO,-2.4,.82,1.6);tabla(S,.9,.03,.5,-2.4,.86,1.6);
- persona(S,{x:-2.4,z:.75,ry:0,gafas:1,mascarilla:'A',guantes:1,ropa:'#DADADA'});
- letrero(S,.45,.4,(k,w,h)=>triangulo(k,w,h,llamaK),-4.48,1.9,1.2,Math.PI/2);
+ /* zona de pintura: pared filtrante con la extracción, en la pared de la derecha */
+ caja(S,.25,2.3,3.2,'#9AA3A6',-4.35,1.15,.8);caja(S,.04,1.7,3.0,'#D8D2B8',-4.21,1.2,.8);for(let i=0;i<7;i++)caja(S,.05,1.7,.03,'#B9B39A',-4.2,1.2,-.6+i*.47);cil(S,.3,.8,'#8F979B',-4.25,2.65,.8);
+ for(const x of[-3.55,-2.95])for(const z of[.3,1.3])caja(S,.05,.8,.05,C3.grisO,x,.4,z);caja(S,.75,.04,1.2,C3.grisO,-3.25,.82,.8);tabla(S,.5,.03,.9,-3.25,.86,.8);
+ persona(S,{x:-2.5,z:.8,ry:-Math.PI/2,gafas:1,mascarilla:'A',guantes:1,ropa:'#DADADA'});
+ letrero(S,.45,.4,(k,w,h)=>triangulo(k,w,h,llamaK),-.9,1.9,2.98,Math.PI);
  /* zona de secado: carros con baldas, sin separación con la de pintura */
  for(const cx of[1.6,3.0]){const c=grupo(S,cx,0,1.6);for(const x of[-.5,.5])for(const z of[-.35,.35])caja(c,.04,1.8,.04,C3.acero,x,.9,z);for(let i=0;i<5;i++){caja(c,1.0,.02,.04,C3.acero,0,.35+i*.33,-.35);caja(c,1.0,.02,.04,C3.acero,0,.35+i*.33,.35);if(i%2===0||cx>2)tabla(c,.9,.025,.6,0,.38+i*.33,0)}}
  /* armario de seguridad y contenedor metálico con tapa */
- armario(grupo(S,3.85,0,2.6,Math.PI),0,0,0);cil(S,.22,.5,'#B3261E',.2,.25,2.6);cil(S,.23,.03,'#8E1C16',.2,.51,2.6);extintor(grupo(S,-4.4,0,-1.5,Math.PI/2),0,0,0);return {}}}}
+ armario(grupo(S,-2.4,0,2.72,Math.PI),0,0,0);cil(S,.22,.5,'#B3261E',.2,.25,2.6);cil(S,.23,.03,'#8E1C16',.2,.51,2.6);extintor(grupo(S,-4.4,0,-1.5,Math.PI/2),0,0,0);return {}}}}
 /* ---------- foto del taller para el certificado ---------- */
 
 /* ====================================================================
