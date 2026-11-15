@@ -689,7 +689,7 @@ function botonera(g,x,y,z){const b=grupo(g,x,y,z,Math.PI);caja(b,.14,.12,.06,'#D
 function aspira(g,a,b,suelta){b=V3(a.x,2.9,a.z+.12);const bo=cil(g,.06,.1,C3.grisO,a.x,a.y,a.z);parte(bo,'aspiracion');if(!suelta)return parte(manguera(g,a,b),'aspiracion');const e=V3(a.x+.32,a.y+.12,a.z+.1),m=manguera(g,e,b);parte(m,'aspiracion');const bo2=cil(g,.065,.06,C3.negro,e.x,e.y,e.z);parte(bo2,'aspiracion');return m}
 const MOD={
  /* escuadradora: cuerpo blanco, carro largo de aluminio con bastidor y regla, protector colgado de un brazo */
- esc(g,o={}){caja(g,1.1,.8,1.4,C3.blanco,0,.4,0);caja(g,1.1,.06,1.4,C3.azulM,0,.77,0);caja(g,1.25,.05,1.5,C3.hierro,.05,.855,0);caja(g,.9,.04,.8,C3.acero,1.1,.86,-.2);
+ esc(g0,o={}){const g=grupo(g0);g.scale.x=-1;/* en espejo: el carro queda a la izquierda del puesto */caja(g,1.1,.8,1.4,C3.blanco,0,.4,0);caja(g,1.1,.06,1.4,C3.azulM,0,.77,0);caja(g,1.25,.05,1.5,C3.hierro,.05,.855,0);caja(g,.9,.04,.8,C3.acero,1.1,.86,-.2);
   const carro=grupo(g,0,0,0);caja(carro,.34,.07,3.1,C3.acero,-.8,.865,0);caja(carro,.2,.5,2.2,C3.blanco,-.8,.55,0);caja(carro,1.1,.05,.07,C3.acero,-1.5,.86,-.75);caja(carro,1.1,.05,.07,C3.acero,-1.5,.86,-.1);caja(carro,.07,.05,.72,C3.acero,-2.02,.86,-.42);cil(carro,.03,.8,C3.grisO,-1.9,.42,-.42);parte(carro,'carro');
   const regla=caja(g,1.9,.07,.08,C3.acero,-1.45,.93,-.82);caja(g,.08,.1,.1,C3.rojo,-1.7,.99,-.82);
   tabla(g,.62,.02,.7,-.42,.91,-.3);
@@ -699,7 +699,7 @@ const MOD={
   caja(g,.07,1.7,.07,C3.blanco,.95,.85,.62);caja(g,1.0,.07,.07,C3.blanco,.48,1.66,.62);caja(g,.07,.07,.5,C3.blanco,.03,1.66,.4);caja(g,.3,.22,.04,'#22272A',.75,1.45,.56);
   if(o.protSuelo){const ps=grupo(g,.9,0,-1.0);caja(ps,.11,.09,.42,'#33393D',0,.045,0).rotation.y=.6;caja(ps,.115,.02,.43,C3.rojo,0,.01,0).rotation.y=.6}
   const gp=grupo(g,0,0,0);caja(gp,.06,.1,.9,C3.acero,.45,.93,.0);caja(gp,1.0,.05,.06,C3.acero,.95,.89,-.72);parte(gp,'guia');
-  aspira(g,V3(.03,1.72,.4),0,o.aspSuelta);botonera(g,.3,.55,-.71);return g},
+  aspira(g,V3(.03,1.72,.4),0,o.aspSuelta);botonera(g,.3,.55,-.71);return g0},
  /* cepilladora: mesas largas de hierro, guía al fondo y puente protector articulado */
  cep(g,o={}){caja(g,.6,.72,1.5,C3.blanco,0,.36,0);caja(g,.03,.14,.6,C3.azulM,-.31,.6,-.4);
   const me=caja(g,.56,.06,1.15,C3.hierro,0,.8,-.62);parte(me,'mesaE');const ms=caja(g,.56,.06,1.15,C3.hierro,0,.83,.62);parte(ms,'mesaS');
@@ -805,28 +805,29 @@ function clavadora(p,mano,apunta){const g=grupo(p,0,0,0);caja(g,.06,.2,.24,'#2F6
 /* ---------- escena del taller para la inspección ---------- */
 /* situación de cada punto según el plano del aula-taller del profesor (aula de unos 10,3 × 15,7 m) */
 const PX=(x,y)=>[(x-113)/97.4,(y-74)/97.4];
-const SITIO={esc:[1.3,0,3.05,Math.PI],tupi:[9.75,0,6.95,Math.PI/2],cep:[4.92,0,5.13,Math.PI],reg:[7.37,0,4.75,0],cinta:[5.0,0,2.09,0],banco1:[4.7,0,7.2,0],banco2:[6.26,0,9.15,0],banco3:[7.67,0,8.49,Math.PI/2],salida:[8.88,0,15.66,0],papel:[5.5,0,12.3,0],cuadro:[7.55,0,15.6,Math.PI],extintor:[.18,0,12.6,Math.PI/2],botiquin:[.12,0,6.3,Math.PI/2],contenedor:[3.2,0,1.0,0]};
+const AN=11.6,FO=17.6;
+const SITIO={esc:[1.3,0,3.05,0],tupi:[11.05,0,6.95,Math.PI/2],cep:[4.92,0,5.13,Math.PI],reg:[7.37,0,4.75,0],cinta:[5.0,0,2.09,0],banco1:[4.7,0,7.2,0],banco2:[6.9,0,10.0,0],banco3:[8.9,0,9.1,Math.PI/2],salida:[10.18,0,FO-.04,0],papel:[5.8,0,14.2,0],cuadro:[8.85,0,FO-.1,Math.PI],extintor:[.18,0,14.5,Math.PI/2],botiquin:[.12,0,6.3,Math.PI/2],contenedor:[3.2,0,1.0,0]};
 function maquinaGen(p,x,z,w,d,h,col,ry=0,txt){const g=grupo(p,x,0,z,ry);caja(g,w,h,d,col,0,h/2,0);caja(g,w+.04,.04,d+.04,C3.mesa,0,h+.02,0);if(txt)letrero(g,Math.min(w,1.2)*.9,.22,(k,W,H)=>{k.fillStyle='#F4F1E8';k.fillRect(0,0,W,H);k.fillStyle='#17201C';k.font='bold 30px Arial';k.textAlign='center';k.fillText(txt,W/2,H*.7)},0,h+.05,0).rotation.x=-Math.PI/2;return g}
-function construyeTaller(S,esc){const AN=10.3,FO=15.7;suelo(S,AN,FO,AN/2,FO/2);
+function construyeTaller(S,esc){suelo(S,AN,FO,AN/2,FO/2);
  const pared=(w,h,x,z,ry,col='#E4DFD2')=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),matC(col,{side:THREE.FrontSide}));m.position.set(x,h/2,z);m.rotation.y=ry;m.receiveShadow=true;S.add(m)};
  /* las cuatro paredes solo se ven desde dentro, para que nunca tapen el taller */
  pared(AN,3,AN/2,0,0);pared(FO,3,0,FO/2,Math.PI/2);pared(AN,3,AN/2,FO,Math.PI);pared(FO,3,AN,FO/2,-Math.PI/2);
  /* portón rojo del garaje (salida al exterior) */
  caja(S,2.97,2.6,.06,'#B3261E',5.03,1.3,.04);for(let i=1;i<6;i++)caja(S,2.97,.02,.07,'#8E1C16',5.03,i*.43,.045);
  /* zona de paso marcada hacia la puerta de doble hoja */
- for(const x of[8.05,9.72]){const l=new THREE.Mesh(new THREE.PlaneGeometry(.08,3.8),matC('#F2C200'));l.rotation.x=-Math.PI/2;l.position.set(x,.005,13.8);S.add(l)}
+ for(const x of[9.35,11.02]){const l=new THREE.Mesh(new THREE.PlaneGeometry(.08,3.8),matC('#F2C200'));l.rotation.x=-Math.PI/2;l.position.set(x,.005,FO-1.9);S.add(l)}
  /* resto del taller, sin interacción */
  const R=grupo(S),ex=(k,x,z,ry=0)=>EXTRA[k](grupo(R,x,0,z,ry));
- MOD.cinta(grupo(R,9.21,0,2.09,0),{pieza:false});MOD.ingl(grupo(R,6.22,0,2.09,-Math.PI/2));MOD.ingl(grupo(R,9.9,0,11.54,Math.PI/2),{largo:1.75});
- MOD.lij(grupo(R,9.85,0,4.02,Math.PI/2));banco(R,8.5,4.02,Math.PI/2,{w:1.2,d:.62});MOD.tupi(grupo(R,1.88,0,7.57,-Math.PI/2),{pieza:false});
+ MOD.cinta(grupo(R,10.5,0,2.09,0),{pieza:false});MOD.ingl(grupo(R,6.22,0,2.09,-Math.PI/2));MOD.ingl(grupo(R,11.2,0,11.54,Math.PI/2),{largo:1.75});
+ MOD.lij(grupo(R,11.15,0,4.02,Math.PI/2));banco(R,9.8,4.02,Math.PI/2,{w:1.2,d:.62});MOD.tupi(grupo(R,1.88,0,7.57,-Math.PI/2),{pieza:false});
  MOD.escop(grupo(R,1.78,0,10.6,-Math.PI/2));MOD.escop(grupo(R,1.77,0,11.65,-Math.PI/2));
- ex('fresadora',9.9,5.86);ex('taladro',9.95,8.0,Math.PI/2);ex('bisagras',9.9,9.03,Math.PI/2);ex('formon',9.95,10.13,Math.PI/2);ex('prensaH',7.37,13.44,Math.PI/2);ex('prensaM',9.85,13.46,Math.PI/2);
- maquinaGen(R,3.0,14.34,5.3,2.2,.95,'#C9CDCB',0,'CNC');
+ ex('fresadora',11.2,5.86);ex('taladro',11.25,8.0,Math.PI/2);ex('bisagras',11.2,9.03,Math.PI/2);ex('formon',11.25,10.13,Math.PI/2);ex('prensaH',6.25,16.2,Math.PI/2);ex('prensaM',11.15,14.4,-Math.PI/2);
+ maquinaGen(R,3.0,16.24,5.3,2.2,.95,'#C9CDCB',0,'CNC');
  const esca=grupo(S,.85,0,8.55);for(let i=0;i<11;i++)caja(esca,1.3,.18*(i+1),.3,'#A9A49A',0,.09*(i+1),-1.5+i*.3);
- for(const [x,z,ry] of [[4.7,8.15,0],[4.7,9.15,0],[4.7,10.04,0],[4.7,11.03,0],[6.26,7.2,0],[6.26,8.15,0],[6.26,10.04,0],[6.26,11.03,0],[7.67,7.2,Math.PI/2],[7.67,9.71,Math.PI/2],[7.67,11.22,Math.PI/2]])banco(R,x,z,ry,{w:1.2,d:.6,ordenado:1});
+ for(const [x,z,ry] of [[4.7,8.6,0],[4.7,10.0,0],[4.7,11.4,0],[4.7,12.8,0],[6.9,7.2,0],[6.9,8.6,0],[6.9,11.4,0],[6.9,12.8,0],[8.9,7.2,Math.PI/2],[8.9,11.0,Math.PI/2],[8.9,12.9,Math.PI/2]])banco(R,x,z,ry,{w:1.2,d:.6,ordenado:1});
  const O={};const pon=(id,f)=>{const s=SITIO[id],g=grupo(S,s[0],s[1],s[2],s[3]);f(g);g.userData.oid=id;g.traverse(c=>c.userData.oid=id);O[id]=g};
  const E=esc;const m=id=>E[id]&&E[id].k;
- pon('esc',g=>{MOD.esc(g,{protQuitado:m('esc')==='protSuelo',protSuelo:m('esc')==='protSuelo'});if(!m('esc'))persona(g,{x:-.45,z:-1.25,ry:0,gafas:1,orejeras:1,ropa:'#3B5A80'})});
+ pon('esc',g=>{MOD.esc(g,{protQuitado:m('esc')==='protSuelo',protSuelo:m('esc')==='protSuelo'});if(!m('esc'))persona(g,{x:.42,z:-1.25,ry:0,gafas:1,orejeras:1,ropa:'#3B5A80'})});
  pon('tupi',g=>{MOD.tupi(g,{carro:false,sinCapota:m('tupi')==='sinCapota'});if(m('tupi'))persona(g,{z:-.85,gafas:1,orejeras:1,ropa:'#7A4A2A'})});
  pon('cep',g=>{MOD.cep(g,{});persona(g,{x:-.65,z:-.6,ry:Math.PI/2,gafas:m('cep')!=='sinEpi',orejeras:m('cep')!=='sinEpi',ropa:'#4A6B3A'})});
  pon('reg',g=>{MOD.reg(g,{});if(m('reg'))persona(g,{x:.75,z:-.7,ry:-.7,gafas:1,orejeras:1,movil:1,brazos:'arriba',ropa:'#6A3A6A'})});
@@ -840,7 +841,7 @@ function construyeTaller(S,esc){const AN=10.3,FO=15.7;suelo(S,AN,FO,AN/2,FO/2);
  pon('extintor',g=>extintor(g,0,0,0));pon('botiquin',g=>botiquin(g,0,0,0));pon('contenedor',g=>{contenedor(g,0,0);if(m('contenedor'))persona(g,{x:.9,z:.3,ry:-1.2,mechero:1,brazos:'arriba',ropa:'#7A3A3A'})});
  /* resto del taller, sin interacción */
  return O}
-function vistaTaller(escena,key){return {key:'taller|'+key,sombra:10,cam:{th:Math.PI/2+.25,el:.95,d:24,t:V3(5.15,0,7.85)},dmin:5,dmax:34,presets:{'General':{th:Math.PI/2+.25,el:.95,d:24},'Desde la puerta':{th:.2,el:.5,d:15},'Desde el portón':{th:Math.PI-.2,el:.5,d:15}},
+function vistaTaller(escena,key){return {key:'taller|'+key,sombra:10,cam:{th:Math.PI/2+.25,el:.95,d:27,t:V3(5.8,0,8.8)},dmin:5,dmax:38,presets:{'General':{th:Math.PI/2+.25,el:.95,d:27},'Desde la puerta':{th:.2,el:.5,d:15},'Desde el portón':{th:Math.PI-.2,el:.5,d:15}},
  construir(S,V){const O=construyeTaller(S,escena);return {O,sel:null,hall:{}}},
  actualizar(ctx,d){if(d.sel!==undefined)ctx.sel=d.sel;if(d.hall)ctx.hall=d.hall;for(const id in ctx.O)ctx.O[id].traverse(o=>{if(o.isMesh&&o.material&&o.material.emissive&&!o.userData.glow)o.material.emissive.set(id===ctx.sel?'#4A3C00':'#000')})},
  etiquetas(ctx){return Object.keys(ctx.hall).map(id=>({p:centroDe(ctx.O[id]).add(V3(0,.9,0)),h:(ctx.hall[id]==='ok'?'✓ ':'')+esc(PUNTOS[id].n),css:`background:${ctx.hall[id]==='ok'?'#2E9E5B':'#55615B'};color:#fff;font:600 13px Barlow,Arial;padding:3px 8px;border-radius:10px;white-space:nowrap`}))},
@@ -1075,7 +1076,7 @@ function usarAyuda(){const p=paso(),st=G.st;if(st.hecho)return;
  pintaPanel();syncVista()}
 function errarAy(c){const k=G.fase+'|'+G.ip[G.fase]+'|'+c;if(G.ek.has(k))return false;G.ek.add(k);G.a[G.fase]=(G.a[G.fase]||0)+1;return true}
 /* plano en 2D del taller, si no hay 3D */
-function planoTaller(p){const st=G.st,hall=st.hall||{},k=60,ox=30,oy=20;return svgDe(fondo('#E9E5DA')+`<rect x="${ox}" y="${oy}" width="${15.7*k}" height="${10.3*k}" fill="#D8D2C4" stroke="#55615B" stroke-width="3"/>`+Object.entries(SITIO).map(([id,s])=>{const x=ox+s[2]*k,y=oy+s[0]*k,c=hall[id]==='ok'?'#2E9E5B':hall[id]?'#8E9894':id===st.cur?'#E8B420':'#4A6B8A';return `<g data-o="${id}" style="cursor:pointer"><rect x="${x-44}" y="${y-18}" width="88" height="36" rx="6" fill="${c}"/>${tx(x,y+5,PUNTOS[id].n,12,'middle','#fff',600)}</g>`}).join('')+tx(500,680,'Plano del taller: pulsa un recuadro',18,'middle','#55615B',500))}
+function planoTaller(p){const st=G.st,hall=st.hall||{},k=54,ox=30,oy=20;return svgDe(fondo('#E9E5DA')+`<rect x="${ox}" y="${oy}" width="${FO*k}" height="${AN*k}" fill="#D8D2C4" stroke="#55615B" stroke-width="3"/>`+Object.entries(SITIO).map(([id,s])=>{const x=ox+s[2]*k,y=oy+s[0]*k,c=hall[id]==='ok'?'#2E9E5B':hall[id]?'#8E9894':id===st.cur?'#E8B420':'#4A6B8A';return `<g data-o="${id}" style="cursor:pointer"><rect x="${x-44}" y="${y-18}" width="88" height="36" rx="6" fill="${c}"/>${tx(x,y+5,PUNTOS[id].n,12,'middle','#fff',600)}</g>`}).join('')+tx(500,680,'Plano del taller: pulsa un recuadro',18,'middle','#55615B',500))}
 
 /* ====================================================================
    INICIO, CERTIFICADO, GUARDADO, PROFESORADO Y EVENTOS
