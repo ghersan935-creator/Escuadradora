@@ -699,7 +699,7 @@ function aspira(g,a,b,suelta){b=V3(a.x,2.9,a.z+.12);const bo=cil(g,.06,.1,C3.gri
 const MOD={
  /* escuadradora: cuerpo blanco, carro largo de aluminio con bastidor y regla, protector colgado de un brazo */
  esc(g0,o={}){const g=grupo(g0);g.scale.x=-1;/* en espejo: el carro queda a la izquierda del puesto */caja(g,1.1,.8,1.4,C3.blanco,0,.4,0);caja(g,1.1,.06,1.4,C3.azulM,0,.77,0);caja(g,1.25,.05,1.5,C3.hierro,.05,.855,0);caja(g,.9,.04,.8,C3.acero,1.1,.86,-.2);
-  const carro=grupo(g,0,0,0);caja(carro,.34,.07,3.1,C3.acero,-.8,.865,0);caja(carro,.2,.5,2.2,C3.blanco,-.8,.55,0);caja(carro,1.1,.05,.07,C3.acero,-1.5,.86,.75);caja(carro,1.1,.05,.07,C3.acero,-1.5,.86,.1);caja(carro,.07,.05,.72,C3.acero,-2.02,.86,.42);cil(carro,.03,.8,C3.grisO,-1.9,.42,.42);parte(carro,'carro');
+  const carro=grupo(g,0,0,0);caja(carro,.34,.07,3.1,C3.acero,-.8,.865,0);caja(carro,.2,.5,2.2,C3.blanco,-.8,.55,0);caja(carro,1.1,.05,.07,C3.acero,-1.5,.86,.75);caja(carro,1.1,.05,.07,C3.acero,-1.5,.86,.1);caja(carro,.07,.05,.72,C3.acero,-2.02,.86,.42);parte(carro,'carro');
   const regla=caja(g,1.9,.07,.08,C3.acero,-1.5,.93,.84);caja(g,.08,.1,.1,C3.rojo,-1.8,.99,.84);
   tabla(g,.62,.02,.7,-.93,.91,.44);
   const dh=o.discoAlto?1.03:.9,d=cil(g,.15,.006,'#9AA3A6',-.6,dh,.08,{rz:Math.PI/2,metalness:.6,roughness:.35});parte(d,'disco');
@@ -731,7 +731,7 @@ const MOD={
   const gx=o.guiasAbiertas?.24:.075,gu=grupo(g,0,0,0);tabla(gu,.42,.16,.04,-(gx+.21),.94,.03);tabla(gu,.42,.16,.04,gx+.21,.94,.03);parte(gu,'guias');
   const py=o.sinPrensores?1.14:.96,pr=grupo(g,0,0,0);caja(pr,.03,.1,.16,C3.amar,-.14,py,-.07);caja(pr,.03,.1,.16,C3.amar,.14,py,-.07);cil(pr,.012,.3,C3.grisO,-.14,py+.18,-.07);cil(pr,.012,.3,C3.grisO,.14,py+.18,-.07);caja(pr,.32,.025,.025,C3.grisO,0,py+.33,-.07);caja(pr,.025,.025,.2,C3.grisO,0,py+.33,.03);parte(pr,'prensores');
   if(o.pieza!==false)tabla(g,.7,.025,.08,.05,.875,-.04);
-  if(o.carro!==false){const car=grupo(g,0,0,0);caja(car,.32,.05,1.1,C3.acero,.72,.85,-.1);caja(car,.3,.08,.05,C3.acero,.72,.9,-.1);cil(car,.03,.8,C3.grisO,.8,.42,-.5);parte(car,'carro')}
+  if(o.carro!==false){const car=grupo(g,0,0,0);caja(car,.32,.05,1.1,C3.acero,.72,.85,-.1);caja(car,.3,.08,.05,C3.acero,.72,.9,-.1);parte(car,'carro')}
   const v=new THREE.Mesh(new THREE.TorusGeometry(.09,.015,8,20),matC(C3.negro));v.position.set(-.22,.5,-.42);g.add(v);
   aspira(g,V3(0,1.12,.2),0,o.aspSuelta);botonera(g,.2,.52,-.41);return g},
  /* sierra de cinta: columna blanca, protector amarillo regulable y mesa de hierro */
@@ -820,7 +820,7 @@ function clavadora(p,mano,apunta){const g=grupo(p,0,0,0);caja(g,.06,.2,.24,'#2F6
 /* situación de cada punto según el plano del aula-taller del profesor (aula de unos 10,3 × 15,7 m) */
 const PX=(x,y)=>[(x-113)/97.4,(y-74)/97.4];
 const AN=11.6,FO=17.6;
-const SITIO={esc:[1.3,0,3.05,0],tupi:[11.05,0,8.6,Math.PI/2],cep:[4.92,0,5.13,Math.PI],reg:[8.02,0,3.8,0],cinta:[5.55,0,2.09,0],banco1:[4.7,0,7.2,0],banco2:[6.9,0,10.0,0],banco3:[8.9,0,9.1,Math.PI/2],salida:[10.18,0,FO-.04,0],papel:[5.8,0,14.2,0],cuadro:[AN-.1,0,FO-.55,-Math.PI/2],extintor:[.18,0,14.5,Math.PI/2],extintor2:[6.85,0,.18,0],extintor3:[8.95,0,FO-.18,Math.PI],extintor4:[AN-.18,0,6.05,-Math.PI/2],botiquin:[.12,0,10.45,Math.PI/2],contenedor:[5.55,0,3.3,0],largos:[11.1,0,.45,0],baul:[2.95,0,.42,0],tableros:[.42,0,.85,Math.PI/2],discos:[1.95,0,.05,0]};
+const SITIO={esc:[1.3,0,4.05,0],tupi:[11.05,0,8.6,Math.PI/2],cep:[4.92,0,5.13,Math.PI],reg:[8.02,0,3.8,0],cinta:[5.55,0,2.09,0],banco1:[4.7,0,7.2,0],banco2:[6.9,0,10.0,0],banco3:[8.9,0,9.1,Math.PI/2],salida:[10.18,0,FO-.04,0],papel:[5.8,0,14.2,0],cuadro:[AN-.1,0,FO-.55,-Math.PI/2],extintor:[.18,0,14.5,Math.PI/2],extintor2:[3.4,0,.14,0],extintor3:[8.95,0,FO-.18,Math.PI],extintor4:[AN-.18,0,6.05,-Math.PI/2],botiquin:[.12,0,10.45,Math.PI/2],contenedor:[5.55,0,3.3,0],largos:[11.1,0,.45,0],baul:[2.7,0,.42,0],tableros:[.31,0,.72,Math.PI/2],discos:[1.95,0,.05,0]};
 function maquinaGen(p,x,z,w,d,h,col,ry=0,txt){const g=grupo(p,x,0,z,ry);caja(g,w,h,d,col,0,h/2,0);caja(g,w+.04,.04,d+.04,C3.mesa,0,h+.02,0);if(txt)letrero(g,Math.min(w,1.2)*.9,.22,(k,W,H)=>{k.fillStyle='#F4F1E8';k.fillRect(0,0,W,H);k.fillStyle='#17201C';k.font='bold 30px Arial';k.textAlign='center';k.fillText(txt,W/2,H*.7)},0,h+.05,0).rotation.x=-Math.PI/2;return g}
 function construyeTaller(S,esc){suelo(S,AN,FO,AN/2,FO/2);
  const pared=(w,h,x,z,ry,col='#E4DFD2')=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),matC(col,{side:THREE.FrontSide}));m.position.set(x,h/2,z);m.rotation.y=ry;m.receiveShadow=true;S.add(m)};
