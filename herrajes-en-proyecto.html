@@ -1915,12 +1915,6 @@ const fechaCod=s=>`${s.slice(6,8)}/${s.slice(4,6)}/${s.slice(0,4)} ${s.slice(8,1
 async function compCert(n,c){const t=String(c).trim().toUpperCase();if(!n.trim())return {ok:false};
   let m=/^4-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d{12})-([0-9A-F]{8})$/.exec(t);
   if(m){if(await firma(n,'4-'+m.slice(1,10).join('-'))!==m[10])return {ok:false};return {ok:true,v:4,nota:coma(m[1]/100),rp:m[2]+' de '+m[3],fal:m[4],pis:m[5],sem:m[6],vez:m[7],min:m[8]+' min',f:fechaCod(m[9]),apto:esApto(m[1]/100,+m[2],+m[3])}}
-  /* versión 3 del 24/11/2026, antes de la condición de artículos encontrados solo */
-  m=/^3-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d{12})-([0-9A-F]{8})$/.exec(t);
-  if(m){if(await firma(n,'3-'+m.slice(1,8).join('-'))!==m[8])return {ok:false};return {ok:true,v:3,nota:coma(m[1]/100),fal:m[2],pis:m[3],sem:m[4],vez:m[5],min:m[6]+' min',f:fechaCod(m[7]),apto:m[1]>=500}}
-  /* certificados de la versión 2 (23/11/2026): nota final y notas de las tres fases */
-  m=/^(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d{12})-([0-9A-F]{8})$/.exec(t);
-  if(m){if(await firma(n,m.slice(1,11).join('-'))!==m[11])return {ok:false};return {ok:true,v:2,nota:coma(m[1]/100),n1:coma(m[2]/100),n2:coma(m[3]/100),n3:coma(m[4]/100),fal:m[5],pis:m[6],sem:m[7],vez:m[8],min:m[9]+' min',f:fechaCod(m[10]),apto:m[1]>=500&&m[4]>=500}}
   return {ok:false}}
 function pProf(){if(!PFOK)return `<h2>Acceso del profesorado</h2><p class="ins">Escriba la clave que le ha facilitado el autor.</p><div class="fila"><input class="txt" id="pfk" type="password" autocomplete="off" style="flex:1"><button class="pri" data-a="pfent">Entrar</button></div>${PFMAL?'<div class="msg mal">La clave no es correcta.</div>':''}`;
   const tb=(v,t)=>`<button class="${PFT===v?'pri':'sec'}" data-a="pftab" data-v="${v}" style="padding:5px 10px">${t}</button>`;
@@ -1937,7 +1931,7 @@ function pGuia(){const cu=centro()?PFURL+'?centro='+encodeURIComponent(centro())
   <h3>Autoría</h3><p class="ins">© 2026 Gustavo Hernández Sánchez · I.E.S. Virgen de la Esperanza · Departamento de Madera. CC BY-NC 4.0.</p>`}
 function pCert(){const P=G.prof||{n:'',c:'',r:null},r=P.r;let t='';
   if(r&&r.ok){const fila=(a,b)=>`<tr><td>${a}</td><td class="n">${b}</td></tr>`;
-    t=`<div class="msg bien">Certificado válido ${r.apto?'· APTO':'· no apto'}${r.v===2?' · versión 2 (con tres fases)':r.v===3?' · versión 3 inicial (todas las casillas valían igual)':''}</div><table>${fila('Fecha',r.f)}${fila('Nota',r.nota)}${r.v===2?fila('Fase 1 · planos',r.n1)+fila('Fase 2 · cálculos',r.n2)+fila('Fase 3 · pedido',r.n3)+fila('Fallos',r.fal):(r.v===4?fila('Nº de artículo encontrados solo',r.rp):'')+fila('Casillas falladas',r.fal)}${fila('Pistas',r.pis)}${fila('Intento',r.vez)}${fila('Tiempo',r.min)}${fila('Semilla',r.sem)}</table>${r.v===4?`<p class="ayu">Con el nombre y la semilla puede ver su encargo y la solución en «Revisar y simular».</p>`:''}`}
+    t=`<div class="msg bien">Certificado válido ${r.apto?'· APTO':'· no apto'}</div><table>${fila('Fecha',r.f)}${fila('Nota',r.nota)}${fila('Nº de artículo encontrados solo',r.rp)}${fila('Casillas falladas',r.fal)}${fila('Pistas',r.pis)}${fila('Intento',r.vez)}${fila('Tiempo',r.min)}${fila('Semilla',r.sem)}</table><p class="ayu">Con el nombre y la semilla puede ver su encargo y la solución en «Revisar y simular».</p>`}
   else if(r)t='<div class="msg mal">El código no corresponde a ese nombre o está mal copiado.</div>';
   return `<p class="ins">Copie el nombre tal como aparece en el certificado y su código.</p><label class="ayu">Nombre y apellidos</label><input class="txt" id="pn" style="width:100%" value="${esc(P.n)}"><label class="ayu">Código</label><input class="txt mono" id="pc" style="width:100%" value="${esc(P.c)}"><div class="fila" style="margin-top:8px"><button class="pri" data-a="compC">Comprobar</button></div>${t}`}
 function pSim(){const S=G.sim||{n:'',s:''};let t='';
