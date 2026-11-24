@@ -1380,18 +1380,20 @@ function pedido(C,r){const M=C.mob,L=[],alta=M.calidad==='Alta';
   return L}
 
 /* ======================================================================
-   NOTA (como un examen)
-   Cada casilla (Nº de artículo, cantidad y unidad de cada línea) vale 10 / N.
-   Una casilla que ha fallado alguna vez vale 0 (aunque luego se corrija).
-   La pista de una línea deja su Nº de artículo en la mitad.
+   NOTA (como un examen, decisión del profesor del 24/11/2026)
+   Nota = 10 × Σ (0,6·R + 0,3·C + 0,1·U) / número de líneas
+   R, C, U = 1 si el Nº de artículo, la cantidad o la unidad están bien a la primera; 0 si han fallado alguna vez
+   (aunque luego se corrijan). Con pista, el Nº de artículo de esa línea vale 0.
+   Apto: nota ≥ 5 y al menos la mitad de los Nº de artículo encontrados sin pista y sin fallo.
    ====================================================================== */
-const CAMPOS=['ref','cant','ud'];
+const CAMPOS=['ref','cant','ud'],PESO_C={ref:.6,cant:.3,ud:.1};
 function okCampo(l,c,v){if(v==null||v==='')return false;if(c==='ref')return l.refs.some(r=>refN(r)===refN(v));if(c==='cant')return num(v)===l.cant;return v===l.ud}
-function valorCasilla(l,c,F){const k='l'+l.n+':'+c;if(F.fallo[k])return 0;if(!okCampo(l,c,(F.resp['l'+l.n]||{})[c]))return 0;return c==='ref'&&F.pistas['l'+l.n]?.5:1}
-function notaDe3(L,F){const N=L.length*3;if(!N)return 0;let s=0;L.forEach(l=>CAMPOS.forEach(c=>s+=valorCasilla(l,c,F)));return s/N*10}
-const esApto=nf=>nf>=5-1e-9;
+function valorCasilla(l,c,F){const k='l'+l.n+':'+c;if(F.fallo[k])return 0;if(!okCampo(l,c,(F.resp['l'+l.n]||{})[c]))return 0;return c==='ref'&&F.pistas['l'+l.n]?0:1}
+function notaDe3(L,F){if(!L.length)return 0;let s=0;L.forEach(l=>CAMPOS.forEach(c=>s+=PESO_C[c]*valorCasilla(l,c,F)));return s/L.length*10}
+const refsPropias=(L,F)=>L.filter(l=>valorCasilla(l,'ref',F)===1).length;
+const esApto=(nf,rp,nl)=>nf>=5-1e-9&&2*rp>=nl;
 
-if(typeof module!=='undefined')module.exports={caso,posBis,juntas,tramosInt,nBaldas,notaDe3,okCampo,esApto,ART,art,MONT,nBis,RNG,normal,refN,CAMPOS};
+if(typeof module!=='undefined')module.exports={caso,posBis,juntas,tramosInt,nBaldas,notaDe3,okCampo,esApto,refsPropias,valorCasilla,PESO_C,ART,art,MONT,nBis,RNG,normal,refN,CAMPOS};
 
 /* ======================================================================
    PLANOS SVG: lámina A3 apaisada en mm (420 × 297), márgenes 15 mm a la
@@ -1754,6 +1756,7 @@ function pie(x,cod,p){tx(x,'Código de comprobación: ',50,1172,`500 17px ${FB}`
 /* ---------- nota ---------- */
 const nota=()=>notaDe3(G.C.lineas,G.F);
 const nFallos=()=>Object.keys(G.F.fallo).length,nPistas=()=>Object.keys(G.F.pistas).length;
+const rProp=()=>refsPropias(G.C.lineas,G.F),aptoAhora=()=>esApto(nota(),rProp(),G.C.lineas.length);
 const lineaOk=l=>CAMPOS.every(c=>okCampo(l,c,(G.F.resp['l'+l.n]||{})[c]));
 
 /* ---------- inicio de partida ---------- */
@@ -1791,7 +1794,7 @@ const visorA=t=>`<a href="${CATALOGO_DB.visor}" target="_blank" rel="noopener">$
 function pInicio(){const c=centro();return `<h2>Herrajes en proyecto</h2>
 <div class="encargo"><p class="ins">Eres el técnico de la oficina de proyectos. Te llega un <b>mueble</b> (cocina, armario, vestidor o salón modular) con sus planos y sus datos, distinto para cada alumno y en cada intento. Tienes la <b>lista de herrajes</b> que lleva: para cada uno, búscalo en el ${visorA('catálogo en PDF de Häfele')} y escribe el <b>Nº de artículo</b>, la <b>cantidad</b> y la <b>unidad</b>.</p></div>
 <h3>Cómo se puntúa (como un examen)</h3>
-<p class="ins">Cada casilla (Nº de artículo, cantidad y unidad de cada línea) vale lo mismo. Pulsa «Comprobar» cuando quieras: una casilla que falla ya no puntúa, aunque después la corrijas, así que <b>comprueba solo lo que tengas seguro</b>. La pista de una línea te dice en qué página del catálogo está, pero su Nº de artículo pasa a valer la mitad. Apto con un 5: quien acierta la mitad de las casillas saca un 5.</p>
+<p class="ins">En cada línea, el <b>Nº de artículo vale el 60 %</b>, la <b>cantidad el 30 %</b> y la <b>unidad el 10 %</b>; todas las líneas valen lo mismo. Pulsa «Comprobar» cuando quieras: lo que falla ya no puntúa, aunque después lo corrijas, así que <b>comprueba solo lo que tengas seguro</b>. La pista de una línea te dice en qué página del catálogo está, pero su Nº de artículo deja de puntuar. <b>Apto:</b> un 5 de nota y, además, encontrar tú solo (sin pista y sin fallo) al menos la mitad de los Nº de artículo.</p>
 <div class="caja"><label class="ayu" for="nom">Nombre y apellidos</label><div class="fila"><input class="txt" id="nom" autocomplete="off" style="flex:1" value="${esc(G.nombre)}"><button class="pri" data-a="empezar">Empezar un intento nuevo</button></div>
 <div class="fila" style="margin-top:8px"><button class="sec" data-a="seguir">Seguir mi partida guardada</button><button class="sec" data-a="cargar">Cargar partida desde un archivo</button></div></div>
 ${msg()}
@@ -1825,7 +1828,7 @@ function pJuego(){const F=G.F,L=G.C.lineas,M=G.C.mob;
   <p class="ins">${TIPO_MOB[M.tipo]} de estilo ${M.estilo.toLowerCase()} y calidad ${M.calidad.toLowerCase()}. Busca cada herraje en el ${visorA('catálogo de Häfele')} y escribe su Nº de artículo, la cantidad y la unidad. Mira los planos: los números en círculo son las líneas.</p>${herramientas()}${msg()}<div class="lineas">`;
   L.forEach(l=>h+=itemLinea(l,F));h+='</div>';
   const n=L.length*3,ok=L.reduce((s,l)=>s+CAMPOS.filter(c=>F.est['l'+l.n+':'+c]==='ok').length,0);
-  h+=`<div class="barra"><button class="sec" data-a="comprobar">Comprobar</button><button class="pri" data-a="entregar">Entregar el pedido</button><span class="ayu">Nota ${coma(nota())} · casillas bien ${ok} de ${n} · falladas ${nFallos()} · pistas ${nPistas()}</span></div>`;
+  h+=`<div class="barra"><button class="sec" data-a="comprobar">Comprobar</button><button class="pri" data-a="entregar">Entregar el pedido</button><span class="ayu">Nota ${coma(nota())} · Nº de artículo encontrados solo ${rProp()} de ${L.length} (mínimo ${Math.ceil(L.length/2)}) · falladas ${nFallos()} · pistas ${nPistas()}</span></div>`;
   if(!REV)h+=`<div class="aviso" style="margin-top:12px"><b>La partida se guarda sola en este ordenador.</b> ¿Vas a seguir en otro? <button class="ter" data-a="gguarda">Guardar en un archivo</button></div>`;
   return h}
 function itemLinea(l,F){const id='l'+l.n,v=F.resp[id]||{},cl=c=>{const e=F.est[id+':'+c];return e==='ok'?'cok':e==='mal'?'cmal':''};
@@ -1841,7 +1844,7 @@ function comprobar(){const F=G.F,L=G.C.lineas;let nuevas=0,mal=0,bien=0,vac=0;
   F.comp++;
   G.msg=mal?[`${bien} casillas bien y ${mal} mal${vac?` (${vac} sin rellenar)`:''}.${nuevas?` ${nuevas>1?nuevas+' casillas nuevas dejan':'1 casilla nueva deja'} de puntuar.`:''} Corrige las rojas: hay que tenerlas bien para aprender, aunque ya no sumen.`,'mal']:[vac?`Todo lo que has rellenado está bien (${bien} casillas). Faltan ${vac}.`:'¡Todo correcto! Ya puedes entregar el pedido.','bien'];
   pinta()}
-function pista(id){const F=G.F;if(F.pistas[id])return;if(!confirm('La pista te dice en qué página del catálogo está el artículo. El Nº de artículo de esta línea pasará a valer la mitad. ¿La quieres?'))return;F.pistas[id]=1;pinta()}
+function pista(id){const F=G.F;if(F.pistas[id])return;if(!confirm('La pista te dice en qué página del catálogo está el artículo. El Nº de artículo de esta línea dejará de puntuar y no contará para el mínimo de artículos encontrados por ti. ¿La quieres?'))return;F.pistas[id]=1;pinta()}
 function entregar(){const L=G.C.lineas,ok=L.filter(lineaOk).length;if(ok<L.length&&!confirm(`Tienes ${ok} de ${L.length} líneas completas y correctas. Lo que no esté bien no puntúa. ¿Entregas el pedido?`))return;
   L.forEach(l=>CAMPOS.forEach(c=>{const k='l'+l.n+':'+c;if(!okCampo(l,c,(G.F.resp['l'+l.n]||{})[c]))G.F.fallo[k]=G.F.fallo[k]||1}));
   G.msg=null;G.fase='fin';pinta();emitir()}
@@ -1860,23 +1863,23 @@ async function cargaPartida(txt){try{const [b,fi]=txt.trim().split('.'),j=d64(b)
 
 /* ======================================================================
    CERTIFICADO
-   Código: 3-nota×100-casillas falladas-pistas-semilla-intento-minutos-fecha-FIRMA
+   Código: 4-nota×100-Nº de artículo encontrados solo-líneas-casillas falladas-pistas-semilla-intento-minutos-fecha-FIRMA
    ====================================================================== */
 async function emitir(){const d=new Date(),f=`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}`,mins=Math.max(1,Math.round((Date.now()-G.t0)/60000));
-  const nf=nota(),datos=`3-${Math.round(nf*100)}-${nFallos()}-${nPistas()}-${G.sem}-${G.vez}-${mins}-${f}`;
+  const nf=nota(),datos=`4-${Math.round(nf*100)}-${rProp()}-${G.C.lineas.length}-${nFallos()}-${nPistas()}-${G.sem}-${G.vez}-${mins}-${f}`;
   const cod=REV?'REVISIÓN DEL PROFESOR · SIN VALIDEZ':`${datos}-${await firma(G.nombre,datos)}`;
   if(!REV){const k=claveH(G.nombre);let H=[];try{H=JSON.parse(ls.get(k)||'[]')}catch(e){}H=H.filter(r=>r.v!==G.vez);H.push({v:G.vez,n:nf,m:mins,f:`${pad(d.getDate())}/${pad(d.getMonth()+1)}`});ls.set(k,JSON.stringify(H));G.hist=H}
   const im1=await svgImg(isoSVG(G.C)),im2=await svgImg(laminaSVG(G.C,0,{fecha:hoy(),centro:centro()}).replace(/<image[^>]*\/>/,''));
-  G.cert={cod,mins,nf,pags:[pagina1(d,cod,mins,nf,im1,im2).toDataURL('image/jpeg',.9),pagina2(cod).toDataURL('image/jpeg',.9)]};pinta()}
-function pagina1(d,cod,mins,nf,im1,im2){const [C,x]=lienzoBase(),ap=esApto(nf),L=G.C.lineas,N=L.length*3;cabecera(x,'Certificado · 1º CFGS Diseño y Amueblamiento · Herrajes con el catálogo de Häfele');
+  G.cert={cod,mins,nf,ap:aptoAhora(),pags:[pagina1(d,cod,mins,nf,im1,im2).toDataURL('image/jpeg',.9),pagina2(cod).toDataURL('image/jpeg',.9)]};pinta()}
+function pagina1(d,cod,mins,nf,im1,im2){const [C,x]=lienzoBase(),ap=aptoAhora(),L=G.C.lineas,N=L.length*3,rp=rProp();cabecera(x,'Certificado · 1º CFGS Diseño y Amueblamiento · Herrajes con el catálogo de Häfele');
   tx(x,G.nombre,50,170,`600 42px ${FB}`);tx(x,`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} · ${pad(d.getHours())}:${pad(d.getMinutes())}h · ${mins} min · intento ${G.vez}`,50,206,`500 23px ${FB}`,'#475569');
-  const bien=L.reduce((s,l)=>s+CAMPOS.filter(c=>valorCasilla(l,c,G.F)===1).length,0),medias=L.reduce((s,l)=>s+(valorCasilla(l,'ref',G.F)===.5?1:0),0);
+
   const dato=(a,e,v)=>{tx(x,e,a,262,`500 21px ${FB}`,'#475569');tx(x,v,a,306,`600 38px ${FM}`)};
-  dato(50,'Nota',coma(nf));dato(300,'Casillas',String(N));dato(520,'Bien a la primera',String(bien));dato(810,'Falladas',String(nFallos()));dato(1010,'Pistas',String(nPistas()));
-  tx(x,`Cada casilla (Nº de artículo, cantidad y unidad) vale 10 / ${N}. Falladas: 0. Con pista: el Nº de artículo vale la mitad${medias?` (${medias})`:''}.`,50,356,`500 19px ${FB}`,'#475569');
+  dato(50,'Nota',coma(nf));dato(270,'Artículos encontrados solo',`${rp} de ${L.length}`);dato(620,'Casillas falladas',String(nFallos()));dato(860,'Pistas',String(nPistas()));
+  tx(x,'Cada línea: Nº de artículo 60 %, cantidad 30 %, unidad 10 %. No puntúa lo fallado ni el Nº de artículo con pista.',50,356,`500 19px ${FB}`,'#475569');tx(x,`Apto: 5 de nota y al menos ${Math.ceil(L.length/2)} Nº de artículo encontrados solo (sin pista y sin fallo).`,50,382,`500 19px ${FB}`,'#475569');
   {const cx=1420,cy=232,R=86,oro=ap?'#C79A1E':'#B9C2BD';x.save();if(ap){for(const sd of[-1,1])for(let i=0;i<10;i++){const a=Math.PI/2+sd*(.3+i*.265),px=cx+(R+13)*Math.cos(a),py=cy+(R+13)*Math.sin(a);for(const tl of[-.55,.55]){x.save();x.translate(px,py);x.rotate(a-sd*Math.PI/2+tl*sd);x.beginPath();x.ellipse(0,0,18,6.6,0,0,7);x.fillStyle=tl<0?'#D9B23A':'#B88A12';x.fill();x.restore()}}}
     x.beginPath();x.arc(cx,cy,R-8,0,7);x.fillStyle=ap?'#FFF8E1':'#F1F3F0';x.fill();x.lineWidth=3;x.strokeStyle=oro;x.stroke();x.restore();tx(x,'NOTA',cx,cy-34,`600 18px ${FB}`,'#475569','center');tx(x,coma(nf),cx,cy+24,`700 54px ${FM}`,'#1e293b','center');
-    tx(x,ap?'APTO — PEDIDO VALIDADO':'TODAVÍA NO APTO',cx,cy+R+50,`700 24px ${FD}`,ap?'#8A6A0A':'#8A1A0A','center');tx(x,ap?'PARA COMPRAS Y TALLER':'Hace falta un 5. Se puede repetir.',cx,cy+R+76,`600 19px ${FB}`,ap?'#8A6A0A':'#475569','center')}
+    tx(x,ap?'APTO — PEDIDO VALIDADO':'TODAVÍA NO APTO',cx,cy+R+50,`700 24px ${FD}`,ap?'#8A6A0A':'#8A1A0A','center');tx(x,ap?'PARA COMPRAS Y TALLER':nf<5?'Hace falta un 5. Se puede repetir.':'Faltan Nº de artículo encontrados solo.',cx,cy+R+76,`600 19px ${FB}`,ap?'#8A6A0A':'#475569','center')}
   const M=G.C.mob;let y=440;tx(x,'Resumen del encargo',50,y,`600 26px ${FB}`);y+=36;
   const lin=t=>{tx(x,t,50,y,`500 20px ${FB}`);y+=28};
   lin(`${TIPO_MOB[M.tipo]} · estilo ${M.estilo.toLowerCase()} · calidad ${M.calidad.toLowerCase()} · ${M.mods.length} ${M.mods.length>1?'módulos':'módulo'}${M.mont?' · '+MONT[M.mont].n:''}`);
@@ -1889,17 +1892,17 @@ function pagina1(d,cod,mins,nf,im1,im2){const [C,x]=lienzoBase(),ap=esApto(nf),L
 function pagina2(cod){const [C,x]=lienzoBase();cabecera(x,`Hoja de pedido de ${G.nombre} · intento ${G.vez}`);let y=160;const L=G.C.lineas,F=G.F;
   const cols=[['Nº',50],['Herraje',100],['Nº de artículo',820],['Cant.',1010],['Unidad',1100],['Página',1230],['Solución',1634]];cols.forEach(([t,a],i)=>tx(x,t,a,y,`600 19px ${FB}`,'#475569',i===6?'right':'left'));y+=10;x.fillStyle='#1e293b';x.fillRect(50,y,1584,2);y+=30;
   const rh=Math.min(64,Math.floor(900/Math.max(1,L.length)));
-  const marca=(l,c,a)=>{const v=valorCasilla(l,c,F);tx(x,v===1?'✓':v===.5?'½':'✗',a,y,`700 20px ${FB}`,v===1?'#15803d':v===.5?'#b45309':'#b91c1c')};
+  const marca=(l,c,a)=>{const v=valorCasilla(l,c,F);const p=c==='ref'&&F.pistas['l'+l.n]&&!F.fallo['l'+l.n+':ref']&&okCampo(l,c,(F.resp['l'+l.n]||{})[c]);tx(x,v===1?'✓':p?'P':'✗',a,y,`700 20px ${FB}`,v===1?'#15803d':p?'#b45309':'#b91c1c')};
   L.forEach(l=>{const v=F.resp['l'+l.n]||{};tx(x,String(l.n),50,y,`500 18px ${FM}`);
     let t=l.tit;x.font=`600 18px ${FB}`;tx(x,t,100,y,`600 18px ${FB}`);
     let d=art(l.ids[0]).nombre.split(',')[0];x.font=`500 15px ${FB}`;while(x.measureText(d).width>690&&d.length>10)d=d.slice(0,-2);tx(x,d,100,y+22,`500 15px ${FB}`,'#64748b');
     marca(l,'ref',795);tx(x,v.ref||'—',820,y,`600 18px ${FM}`);marca(l,'cant',985);tx(x,v.cant||'—',1010,y,`500 18px ${FM}`);marca(l,'ud',1075);tx(x,v.ud||'—',1100,y,`500 18px ${FB}`);tx(x,l.ff,1230,y,`500 17px ${FB}`,'#475569');
     if(!lineaOk(l))tx(x,`${l.refs.join(' / ')} · ${l.cant} ${l.ud}`,1634,y,`500 15px ${FM}`,'#94a3b8','right');y+=rh});
-  tx(x,'✓ casilla bien a la primera · ½ Nº de artículo con pista · ✗ casilla fallada o vacía (en gris, la solución).',50,1130,`500 17px ${FB}`,'#475569');pie(x,cod,2);return C}
+  tx(x,'✓ bien a la primera · P Nº de artículo encontrado con pista (no puntúa) · ✗ fallado o vacío (en gris, la solución).',50,1130,`500 17px ${FB}`,'#475569');pie(x,cod,2);return C}
 async function descargar(){const data=pdfDesde(G.cert.pags),nom='Herrajes_'+normal(G.nombre).toLowerCase().replace(/(^| )\w/g,c=>c.toUpperCase()).replace(/ /g,'_')+'.pdf',dl=await dlP;
   if(dl){try{await dl.save({filename:nom,data:new Blob([data],{type:'application/pdf'})});toast('Certificado guardado. Súbelo a la tarea de Classroom.')}catch(e){}}
   else{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/pdf'}));a.download=nom;a.click();toast('Certificado guardado. Súbelo a la tarea de Classroom.')}}
-function pFin(){if(!G.cert)return `<h2>Preparando el certificado…</h2>`;const ap=esApto(G.cert.nf);
+function pFin(){if(!G.cert)return `<h2>Preparando el certificado…</h2>`;const ap=G.cert.ap;
   return `<h2>Certificado ${ap?'· APTO — PEDIDO VALIDADO':'· todavía no apto'}</h2><div class="fila"><button class="pri" data-a="desc">Descargar el certificado (PDF)</button>${REV?'<button class="sec" data-a="prof">Volver al profesorado</button>':'<button class="sec" data-a="otra">Hacer otro intento</button>'}</div>
   <p class="ayu">Sube el PDF a la tarea de Classroom. Código: <span class="mono">${esc(G.cert.cod)}</span></p><div id="cert">${G.cert.pags.map(u=>`<img src="${u}" alt="Página del certificado">`).join('')}</div>`}
 
@@ -1910,8 +1913,11 @@ let PFOK=false,PFT='guia',PFMAL=false,PFC='';try{PFOK=ls.get('prof-'+JUEGO)===PF
 async function pfEntra(){const k=$('#pfk');if(!k)return;const h=await sha('IESVE-prof|'+k.value.trim());if(h===PFH){PFOK=true;PFMAL=false;ls.set('prof-'+JUEGO,PFH)}else PFMAL=true;pinta()}
 const fechaCod=s=>`${s.slice(6,8)}/${s.slice(4,6)}/${s.slice(0,4)} ${s.slice(8,10)}:${s.slice(10)}h`;
 async function compCert(n,c){const t=String(c).trim().toUpperCase();if(!n.trim())return {ok:false};
-  let m=/^3-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d{12})-([0-9A-F]{8})$/.exec(t);
-  if(m){if(await firma(n,'3-'+m.slice(1,8).join('-'))!==m[8])return {ok:false};return {ok:true,v:3,nota:coma(m[1]/100),fal:m[2],pis:m[3],sem:m[4],vez:m[5],min:m[6]+' min',f:fechaCod(m[7]),apto:esApto(m[1]/100)}}
+  let m=/^4-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d{12})-([0-9A-F]{8})$/.exec(t);
+  if(m){if(await firma(n,'4-'+m.slice(1,10).join('-'))!==m[10])return {ok:false};return {ok:true,v:4,nota:coma(m[1]/100),rp:m[2]+' de '+m[3],fal:m[4],pis:m[5],sem:m[6],vez:m[7],min:m[8]+' min',f:fechaCod(m[9]),apto:esApto(m[1]/100,+m[2],+m[3])}}
+  /* versión 3 del 24/11/2026, antes de la condición de artículos encontrados solo */
+  m=/^3-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d{12})-([0-9A-F]{8})$/.exec(t);
+  if(m){if(await firma(n,'3-'+m.slice(1,8).join('-'))!==m[8])return {ok:false};return {ok:true,v:3,nota:coma(m[1]/100),fal:m[2],pis:m[3],sem:m[4],vez:m[5],min:m[6]+' min',f:fechaCod(m[7]),apto:m[1]>=500}}
   /* certificados de la versión 2 (23/11/2026): nota final y notas de las tres fases */
   m=/^(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d+)-(\d{12})-([0-9A-F]{8})$/.exec(t);
   if(m){if(await firma(n,m.slice(1,11).join('-'))!==m[11])return {ok:false};return {ok:true,v:2,nota:coma(m[1]/100),n1:coma(m[2]/100),n2:coma(m[3]/100),n3:coma(m[4]/100),fal:m[5],pis:m[6],sem:m[7],vez:m[8],min:m[9]+' min',f:fechaCod(m[10]),apto:m[1]>=500&&m[4]>=500}}
@@ -1924,14 +1930,14 @@ function pGuia(){const cu=centro()?PFURL+'?centro='+encodeURIComponent(centro())
   return `<div class="aviso"><b>Para el alumnado:</b> <span class="mono" style="word-break:break-all">${esc(cu)}</span><br><b>Para usted:</b> el mismo enlace terminado en <span class="mono">#profesor</span>, con la clave. No comparta ni lo uno ni lo otro con el alumnado.</div>
   <h3>Qué es</h3><p class="ins">Juego de una sola página para 1º CFGS de Diseño y Amueblamiento (versión 3, 24/11/2026). Cada partida trae un mueble (cocina, armario, vestidor o salón modular) con sus planos (conjunto e interior con Sistema 32) y la lista de herrajes que lleva, distintos para cada alumno y en cada intento. Para cada herraje, el alumno busca en el catálogo en PDF de Häfele (International 2020, el del visor de hafele.es) el Nº de artículo, la cantidad y la unidad.</p>
   <h3>Qué aprende</h3>${li(['A manejar un catálogo técnico real: capítulos, índice, páginas FF, tablas por medida, acabado y versión.','El vocabulario del fabricante, que no es el del taller (jaladera, corredera, zoclo, gabinete, montaje angular…).','A sacar las cantidades de los planos con los criterios del taller.','Que la cantidad se cuenta en la unidad del catálogo (pieza, par, juego).'])}
-  <h3>Nota (como un examen)</h3><p class="ins">Hay 3 casillas por línea (Nº de artículo, cantidad y unidad); cada una vale 10 / N. Una casilla que falla al comprobar vale 0 aunque luego se corrija; la pista de una línea deja su Nº de artículo en la mitad. Quien falla la mitad de las casillas saca un 5. Apto con un 5. Hay que corregir las casillas en rojo para entregar el pedido completo, aunque ya no sumen.</p>
+  <h3>Nota (como un examen)</h3><p class="ins">Nota = 10 × Σ (0,6·R + 0,3·C + 0,1·U) / número de líneas. R, C y U valen 1 si el Nº de artículo, la cantidad o la unidad están bien a la primera, y 0 si han fallado alguna vez al comprobar, aunque luego se corrijan. Con la pista (página del catálogo), el Nº de artículo de esa línea vale 0. <b>Apto:</b> nota de 5 o más y, además, al menos la mitad de los Nº de artículo encontrados por el alumno sin pista y sin fallo. Pidiendo la pista en todas las líneas se saca un 4. Hay que corregir lo que sale en rojo para entregar el pedido completo, aunque ya no sume.</p>
   <h3>Criterios de taller que aplica</h3>${li(['Bisagras: 2 hasta 900 mm de alto de puerta, 3 hasta 1600 y 4 por encima; una base por bisagra.','Guías: 1 par por cajón, la longitud nominal más larga que cabe en la profundidad interior.','Tiradores: 1 por puerta y 1 por cajón (los cajones interiores del armario no llevan).','Portaestantes: 4 por balda móvil.','Patas: 4 por módulo en el suelo.','Colgadores: 1 izquierdo y 1 derecho por mueble alto.','Tornillos de unión: 2 por unión entre módulos y 4 entre columnas.','Barras: 1 por tramo (la longitud comercial más corta) y 2 soportes por barra. Calidad alta: elevador en un tramo de colgar.'])}
   <h3>Variabilidad</h3><p class="ins">Tipo de mueble, estilo, calidad, medidas, grosores, tipo de puerta, esquema de taladro, altura de la base, zócalo, profundidad, tirador, carga de las baldas… Cada combinación de nombre, intento y centro da un encargo distinto, con 6 a 10 líneas de pedido.</p>
   <h3>Limitaciones</h3><p class="ins">No hay servidor: partidas e intentos se guardan en el navegador. El código del certificado detecta cambios en nombre y nota, pero el archivo es público: si cuenta para la evaluación, el certificado no debería ser la única prueba. El catálogo es la edición de 2020: alguna referencia puede no estar ya a la venta en la tienda web, pero el juego se resuelve con el catálogo.</p>
   <h3>Autoría</h3><p class="ins">© 2026 Gustavo Hernández Sánchez · I.E.S. Virgen de la Esperanza · Departamento de Madera. CC BY-NC 4.0.</p>`}
 function pCert(){const P=G.prof||{n:'',c:'',r:null},r=P.r;let t='';
   if(r&&r.ok){const fila=(a,b)=>`<tr><td>${a}</td><td class="n">${b}</td></tr>`;
-    t=`<div class="msg bien">Certificado válido ${r.apto?'· APTO':'· no apto'}${r.v===2?' · versión 2 (con tres fases)':''}</div><table>${fila('Fecha',r.f)}${fila('Nota',r.nota)}${r.v===2?fila('Fase 1 · planos',r.n1)+fila('Fase 2 · cálculos',r.n2)+fila('Fase 3 · pedido',r.n3)+fila('Fallos',r.fal):fila('Casillas falladas',r.fal)}${fila('Pistas',r.pis)}${fila('Intento',r.vez)}${fila('Tiempo',r.min)}${fila('Semilla',r.sem)}</table>${r.v===3?`<p class="ayu">Con el nombre y la semilla puede ver su encargo y la solución en «Revisar y simular».</p>`:''}`}
+    t=`<div class="msg bien">Certificado válido ${r.apto?'· APTO':'· no apto'}${r.v===2?' · versión 2 (con tres fases)':r.v===3?' · versión 3 inicial (todas las casillas valían igual)':''}</div><table>${fila('Fecha',r.f)}${fila('Nota',r.nota)}${r.v===2?fila('Fase 1 · planos',r.n1)+fila('Fase 2 · cálculos',r.n2)+fila('Fase 3 · pedido',r.n3)+fila('Fallos',r.fal):(r.v===4?fila('Nº de artículo encontrados solo',r.rp):'')+fila('Casillas falladas',r.fal)}${fila('Pistas',r.pis)}${fila('Intento',r.vez)}${fila('Tiempo',r.min)}${fila('Semilla',r.sem)}</table>${r.v===4?`<p class="ayu">Con el nombre y la semilla puede ver su encargo y la solución en «Revisar y simular».</p>`:''}`}
   else if(r)t='<div class="msg mal">El código no corresponde a ese nombre o está mal copiado.</div>';
   return `<p class="ins">Copie el nombre tal como aparece en el certificado y su código.</p><label class="ayu">Nombre y apellidos</label><input class="txt" id="pn" style="width:100%" value="${esc(P.n)}"><label class="ayu">Código</label><input class="txt mono" id="pc" style="width:100%" value="${esc(P.c)}"><div class="fila" style="margin-top:8px"><button class="pri" data-a="compC">Comprobar</button></div>${t}`}
 function pSim(){const S=G.sim||{n:'',s:''};let t='';
